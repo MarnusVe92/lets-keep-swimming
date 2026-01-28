@@ -622,9 +622,15 @@ main {
 /* ============================================ */
 .charts-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
+}
+
+/* Canvas/Chart responsive container */
+canvas {
+  max-width: 100%;
+  height: auto !important;
 }
 
 /* ============================================ */
@@ -1584,10 +1590,34 @@ small {
 
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  .stat-card {
+    padding: var(--spacing-md);
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .stat-icon .icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
   }
 
   .charts-row {
     grid-template-columns: 1fr;
+  }
+
+  .card-body {
+    padding: var(--spacing-md);
   }
 
   .session-item {
@@ -1606,8 +1636,43 @@ small {
 
 /* Small mobile - 480px */
 @media (max-width: 480px) {
+  .container {
+    padding: 0 var(--spacing-sm);
+  }
+
   .stats-grid {
     grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xs);
+  }
+
+  .stat-card {
+    padding: var(--spacing-sm);
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .stat-icon .icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .streak-history {
+    font-size: 0.65rem;
+  }
+
+  .countdown-number {
+    font-size: 2.5rem;
   }
 
   .countdown-actions {
@@ -1617,6 +1682,14 @@ small {
   .btn-countdown {
     width: 100%;
     justify-content: center;
+  }
+
+  .card-body {
+    padding: var(--spacing-sm);
+  }
+
+  .card-header {
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 
   .coach-adjustments {
@@ -1632,12 +1705,17 @@ small {
   .adjust-input {
     width: 100%;
   }
+
+  /* Chart container adjustments */
+  .chart-container {
+    min-height: 200px;
+  }
 }
 
 /* Extra small mobile - 320px */
 @media (max-width: 360px) {
   .container {
-    padding: 0 var(--spacing-sm);
+    padding: 0 var(--spacing-xs);
   }
 
   .header {
@@ -1661,37 +1739,77 @@ small {
     display: none;
   }
 
+  .section-title {
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .stats-grid {
+    gap: 6px;
+  }
+
   .stat-card {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs);
+  }
+
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 4px;
+  }
+
+  .stat-icon .icon {
+    width: 16px;
+    height: 16px;
   }
 
   .stat-value {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
 
   .stat-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
+  }
+
+  .streak-history {
+    font-size: 0.6rem;
+    padding-top: 4px;
+    margin-top: 4px;
+  }
+
+  .streak-dates {
+    font-size: 0.55rem;
   }
 
   .countdown-number {
-    font-size: 2.5rem;
+    font-size: 2rem;
   }
 
   .countdown-label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .card {
-    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .card-body {
+    padding: var(--spacing-xs);
+  }
+
+  .card-header {
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 
   .card-header h3 {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 
   .btn {
     padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    min-height: 40px;
   }
 
   .form-group label {
@@ -1703,6 +1821,7 @@ small {
   .form-group textarea {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.9rem;
+    min-height: 40px;
   }
 
   .session-item {
@@ -1710,7 +1829,7 @@ small {
   }
 
   .session-stats {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     gap: var(--spacing-xs);
   }
 
@@ -1720,6 +1839,33 @@ small {
 
   .mobile-nav.active {
     transform: translateX(-260px);
+  }
+
+  /* Goal cards on small screens */
+  .goal-card {
+    padding: var(--spacing-sm);
+  }
+
+  .goal-title {
+    font-size: 0.8rem;
+  }
+
+  .goal-progress-text {
+    font-size: 0.7rem;
+  }
+
+  /* Week rings smaller on tiny screens */
+  .week-ring-svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .week-ring-value {
+    font-size: 0.5rem;
+  }
+
+  .week-ring-label {
+    font-size: 0.5rem;
   }
 }
 

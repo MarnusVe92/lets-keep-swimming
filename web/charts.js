@@ -29,8 +29,11 @@ function updateVolumeChart(sessions) {
     const dateStr = date.toISOString().split('T')[0];
     last14Days.push(dateStr);
 
-    // Format label (e.g., "Mon 28")
-    const label = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+    // Format label - shorter on mobile
+    const isMobile = window.innerWidth < 480;
+    const label = isMobile
+      ? date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }).replace(' ', '\n')
+      : date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
     labels.push(label);
   }
 
@@ -63,7 +66,7 @@ function updateVolumeChart(sessions) {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      aspectRatio: 2,
+      aspectRatio: window.innerWidth < 480 ? 1.5 : 2,
       plugins: {
         legend: {
           display: false
@@ -82,12 +85,29 @@ function updateVolumeChart(sessions) {
           ticks: {
             callback: function(value) {
               return value + 'm';
+            },
+            font: {
+              size: window.innerWidth < 480 ? 10 : 12
             }
           }
         },
         x: {
           grid: {
             display: false
+          },
+          ticks: {
+            maxRotation: window.innerWidth < 480 ? 45 : 0,
+            minRotation: window.innerWidth < 480 ? 45 : 0,
+            font: {
+              size: window.innerWidth < 480 ? 9 : 11
+            },
+            // On very small screens, show every other label
+            callback: function(value, index) {
+              if (window.innerWidth < 360 && index % 2 !== 0) {
+                return '';
+              }
+              return this.getLabelForValue(value);
+            }
           }
         }
       }
