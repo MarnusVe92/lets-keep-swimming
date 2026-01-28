@@ -18,27 +18,31 @@
 <body>
   <!-- Header -->
   <header class="header">
-    <div class="container">
-      <h1 class="app-title">
-        <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 28px; height: 28px; color: var(--color-primary);">
-          <path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
-          <path d="M4 22c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/>
-          <path d="M4 17c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/>
-          <path d="M7 14l3.5-3.5L13 13l4-6"/>
-        </svg>
-        Let's Keep Swimming
-      </h1>
-      <p class="app-subtitle">Midmar Mile Training Companion</p>
+    <div class="container header-content">
+      <div class="header-left">
+        <h1 class="app-title">
+          <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 28px; height: 28px; color: var(--color-primary);">
+            <path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+            <path d="M4 22c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/>
+            <path d="M4 17c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/>
+            <path d="M7 14l3.5-3.5L13 13l4-6"/>
+          </svg>
+          Let's Keep Swimming
+        </h1>
+        <p class="app-subtitle">Midmar Mile Training Companion</p>
+      </div>
+      <div class="header-right">
+        <div class="nav-group nav-group-secondary">
+          <button class="tab-btn" data-tab="profile">Profile</button>
+          <button class="tab-btn" data-tab="data">Data</button>
+        </div>
+      </div>
     </div>
   </header>
 
   <!-- Navigation Tabs -->
   <nav class="nav-tabs">
-    <div class="container nav-segmented">
-      <div class="nav-group nav-group-secondary">
-        <button class="tab-btn" data-tab="profile">Profile</button>
-        <button class="tab-btn" data-tab="data">Data</button>
-      </div>
+    <div class="container nav-container">
       <div class="nav-group nav-group-primary">
         <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
         <button class="tab-btn" data-tab="sessions">Sessions</button>
