@@ -1,0 +1,19 @@
+{
+  "name": "lets-keep-swimming-server",
+  "version": "1.0.0",
+  "description": "Server for Let's Keep Swimming - LLM-powered swim training companion",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["swim", "training", "ai", "coaching"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2"
+  }
+}

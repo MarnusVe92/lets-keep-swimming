@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Let's Keep Swimming - Midmar Mile Training</title>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Chart.js for beautiful visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <h1 class="app-title">
+        <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 28px; height: 28px; color: var(--color-primary);">
+          <path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+          <path d="M4 22c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/>
+          <path d="M4 17c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/>
+          <path d="M7 14l3.5-3.5L13 13l4-6"/>
+        </svg>
+        Let's Keep Swimming
+      </h1>
+      <p class="app-subtitle">Midmar Mile Training Companion</p>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <div class="container nav-segmented">
+      <div class="nav-group nav-group-secondary">
+        <button class="tab-btn" data-tab="profile">Profile</button>
+        <button class="tab-btn" data-tab="data">Data</button>
+      </div>
+      <div class="nav-group nav-group-primary">
+        <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-btn" data-tab="sessions">Sessions</button>
+        <button class="tab-btn" data-tab="coach">Coach</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- ============================================ -->
+    <!-- DASHBOARD TAB -->
+    <!-- ============================================ -->
+    <section id="tab-dashboard" class="tab-content active">
+      <h2 class="section-title">Training Dashboard</h2>
+
+      <!-- Event Countdown Card -->
+      <div class="card card-primary">
+        <div class="card-header">
+          <h3>
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="color: white;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            Event Countdown
+          </h3>
+        </div>
+        <div class="card-body">
+          <div id="countdown-display" class="countdown">
+            <div class="countdown-number">--</div>
+            <div class="countdown-label">days until Midmar Mile</div>
+          </div>
+          <div class="countdown-actions">
+            <button onclick="switchTab('sessions')" class="btn btn-countdown">
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Log Session
+            </button>
+            <button onclick="switchTab('coach')" class="btn btn-countdown">
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              View Coach
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><path d="M8 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 4v16"/><path d="M12 4h4"/><path d="M12 8h3"/><path d="M12 12h4"/><path d="M12 16h3"/><path d="M12 20h4"/></svg>
+          </div>
+          <div class="stat-value" id="stat-7days">-- m</div>
+          <div class="stat-label">Last 7 Days</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="stat-value" id="stat-14days">-- m</div>
+          <div class="stat-label">Last 14 Days</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M6.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/><path d="M12.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/><line x1="4" y1="12" x2="6.5" y2="12"/><line x1="17.5" y1="12" x2="20" y2="12"/></svg>
+          </div>
+          <div class="stat-value" id="stat-avg-rpe">--</div>
+          <div class="stat-label">Avg RPE (7 days)</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="color: var(--color-warning);"><path d="M12 22c4.97 0 9-3.58 9-8 0-2.5-.5-4-2-6-1-1.5-2-3-2-5 0 0-1.5 1-2 3-.5 2-2 3-4 3s-4-1.5-4-3.5c0-1.5.5-3 1-4C6 4 4 7 4 10c0 6 4 12 8 12z"/></svg>
+          </div>
+          <div class="stat-value" id="stat-streak">--</div>
+          <div class="stat-label">Current Streak</div>
+          <div class="streak-history" id="streak-history">
+            <span class="streak-best">Best: <strong id="streak-best-value">--</strong> days</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <div class="card">
+          <div class="card-header">
+            <h3>Training Volume (Last 14 Days)</h3>
+          </div>
+          <div class="card-body">
+            <canvas id="volumeChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Training Progress</h3>
+          </div>
+          <div class="card-body">
+            <canvas id="progressChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Goals Progress -->
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            This Week's Progress
+          </h3>
+        </div>
+        <div class="card-body">
+          <div id="weekly-goals-container">
+            <div class="goal-card">
+              <div class="goal-header">
+                <span class="goal-title">Weekly Distance Target</span>
+                <span class="goal-progress-text" id="goal-distance-text">-- / -- m</span>
+              </div>
+              <div class="goal-progress-bar">
+                <div class="goal-progress-fill on-track" id="goal-distance-fill" style="width: 0%"></div>
+              </div>
+              <div class="goal-remaining">
+                <span>Remaining: <strong id="goal-distance-remaining">--</strong></span>
+                <span id="goal-distance-status">Set up profile to see goals</span>
+              </div>
+            </div>
+
+            <div class="goal-card">
+              <div class="goal-header">
+                <span class="goal-title">Sessions This Week</span>
+                <span class="goal-progress-text" id="goal-sessions-text">-- / --</span>
+              </div>
+              <div class="goal-progress-bar">
+                <div class="goal-progress-fill on-track" id="goal-sessions-fill" style="width: 0%"></div>
+              </div>
+              <div class="goal-remaining">
+                <span>Remaining: <strong id="goal-sessions-remaining">--</strong></span>
+                <span id="goal-sessions-status"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Sessions -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Recent Sessions</h3>
+        </div>
+        <div class="card-body">
+          <div id="recent-sessions-list"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================ -->
+    <!-- COACH TAB -->
+    <!-- ============================================ -->
+    <section id="tab-coach" class="tab-content">
+      <h2 class="section-title">AI Coach</h2>
+
+      <!-- Coach Status -->
+      <div class="coach-status" id="coach-status">
+        <span class="coach-status-dot none" id="coach-status-dot"></span>
+        <span id="coach-status-text">No recommendation yet</span>
+      </div>
+
+      <!-- Get New Recommendation -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Get Tomorrow's Session</h3>
+        </div>
+        <div class="card-body">
+          <p style="margin-bottom: var(--spacing-md); color: var(--color-text-muted);">
+            Based on your profile and recent training, the AI coach will recommend your next session.
+          </p>
+          <button id="get-coaching-btn" class="btn btn-primary btn-large">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Generate New Recommendation
+          </button>
+          <div id="coaching-loading" class="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+            <p>Consulting your AI coach...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Recommendation -->
+      <div id="coaching-results" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <h3>Tomorrow's Session</h3>
+            <button id="copy-coaching-btn" class="btn btn-secondary btn-small">
+              <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="coaching-display"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="coach-empty-state" class="card">
+        <div class="card-body">
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/></svg>
+            </div>
+            <p>Click the button above to get your first recommendation!</p>
+            <p class="text-muted" style="margin-top: var(--spacing-sm);">
+              The coach uses your profile and training history to create personalized sessions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- PROFILE TAB -->
+    <!-- ============================================ -->
+    <section id="tab-profile" class="tab-content">
+      <h2 class="section-title">Profile Setup</h2>
+
+      <div class="card">
+        <div class="card-body">
+          <form id="profile-form">
+            <!-- Event Date -->
+            <div class="form-group">
+              <label for="eventDate">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Event Date
+              </label>
+              <input type="date" id="eventDate" name="eventDate" required>
+              <small>When is your Midmar Mile?</small>
+            </div>
+
+            <!-- Goal -->
+            <div class="form-group">
+              <label for="goal">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                Goal
+              </label>
+              <select id="goal" name="goal" required>
+                <option value="finish_comfortably">Finish comfortably</option>
+                <option value="target_time">Target a specific time</option>
+              </select>
+            </div>
+
+            <!-- Target Time (conditional) -->
+            <div class="form-group" id="target-time-group" style="display: none;">
+              <label for="targetTime">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Target Time (MM:SS)
+              </label>
+              <input type="text" id="targetTime" name="targetTime" placeholder="45:00">
+              <small>Format: MM:SS (e.g., 45:00 for 45 minutes)</small>
+            </div>
+
+            <!-- Training Availability -->
+            <div class="form-group">
+              <label>
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Training Availability
+              </label>
+              <div class="availability-options">
+                <div class="option-group">
+                  <input type="radio" id="avail-days" name="availability-type" value="days" checked>
+                  <label for="avail-days">Specific days</label>
+                </div>
+                <div class="option-group">
+                  <input type="radio" id="avail-sessions" name="availability-type" value="sessions">
+                  <label for="avail-sessions">Sessions per week</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Days checkboxes -->
+            <div class="form-group" id="days-group">
+              <label>Which days can you train?</label>
+              <div class="checkbox-group">
+                <label><input type="checkbox" name="day" value="Mon"> Mon</label>
+                <label><input type="checkbox" name="day" value="Tue"> Tue</label>
+                <label><input type="checkbox" name="day" value="Wed"> Wed</label>
+                <label><input type="checkbox" name="day" value="Thu"> Thu</label>
+                <label><input type="checkbox" name="day" value="Fri"> Fri</label>
+                <label><input type="checkbox" name="day" value="Sat"> Sat</label>
+                <label><input type="checkbox" name="day" value="Sun"> Sun</label>
+              </div>
+            </div>
+
+            <!-- Sessions per week -->
+            <div class="form-group" id="sessions-group" style="display: none;">
+              <label for="sessionsPerWeek">Sessions per week</label>
+              <input type="number" id="sessionsPerWeek" name="sessionsPerWeek" min="1" max="7" value="3">
+            </div>
+
+            <!-- Access -->
+            <div class="form-group">
+              <label>
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 14h20"/><path d="M6 6v12"/><path d="M10 6v12"/><path d="M14 6v12"/><path d="M18 6v12"/></svg>
+                Access to Training Facilities
+              </label>
+              <div class="checkbox-group">
+                <label><input type="checkbox" id="access-pool" name="access-pool" checked> Pool</label>
+                <label><input type="checkbox" id="access-ow" name="access-ow"> Open Water</label>
+              </div>
+            </div>
+
+            <!-- Longest Recent Swim -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="longestDistance">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><path d="M8 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 4v16"/></svg>
+                  Longest Recent Swim (meters)
+                </label>
+                <input type="number" id="longestDistance" name="longestDistance" min="0" step="100" value="1000" required>
+              </div>
+              <div class="form-group">
+                <label for="longestTime">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Time (minutes)
+                </label>
+                <input type="number" id="longestTime" name="longestTime" min="0" step="5" value="30" required>
+              </div>
+            </div>
+
+            <!-- Weekly Volume -->
+            <div class="form-group">
+              <label for="weeklyVolume">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Estimated Weekly Volume (meters)
+              </label>
+              <input type="number" id="weeklyVolume" name="weeklyVolume" min="0" step="500" value="3000" required>
+              <small>How much do you typically swim per week?</small>
+            </div>
+
+            <!-- Coaching Tone -->
+            <div class="form-group">
+              <label for="tone">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Coaching Tone
+              </label>
+              <select id="tone" name="tone" required>
+                <option value="neutral">Neutral (professional & factual)</option>
+                <option value="calm">Calm (gentle & encouraging)</option>
+                <option value="tough_love">Tough Love (direct & motivating)</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Profile</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SESSIONS TAB -->
+    <!-- ============================================ -->
+    <section id="tab-sessions" class="tab-content">
+      <h2 class="section-title">Training Sessions</h2>
+
+      <!-- Add Session Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3 id="session-form-title">Log New Session</h3>
+        </div>
+        <div class="card-body">
+          <form id="session-form">
+            <input type="hidden" id="edit-session-id" value="">
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sessionDate">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Date
+                </label>
+                <input type="date" id="sessionDate" name="sessionDate" required>
+              </div>
+              <div class="form-group">
+                <label for="sessionType">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M2 12c2-2 4-3 6-3s4 1 6 3 4 3 6 3 4-1 6-3"/><path d="M2 6c2-2 4-3 6-3s4 1 6 3 4 3 6 3 4-1 6-3"/><path d="M2 18c2-2 4-3 6-3s4 1 6 3 4 3 6 3 4-1 6-3"/></svg>
+                  Type
+                </label>
+                <select id="sessionType" name="sessionType" required>
+                  <option value="pool">Pool</option>
+                  <option value="open_water">Open Water</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sessionDistance">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><path d="M8 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 4v16"/></svg>
+                  Distance (meters)
+                </label>
+                <input type="number" id="sessionDistance" name="sessionDistance" min="0" step="50" required>
+              </div>
+              <div class="form-group">
+                <label for="sessionTime">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Time (minutes)
+                </label>
+                <input type="number" id="sessionTime" name="sessionTime" min="0" step="1" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="sessionRPE">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M6.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/><path d="M12.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/></svg>
+                RPE (Rate of Perceived Exertion: 1-10)
+              </label>
+              <input type="range" id="sessionRPE" name="sessionRPE" min="1" max="10" value="5" required>
+              <div class="rpe-display">
+                <span id="rpe-value">5</span> / 10
+                <small id="rpe-description">Moderate</small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="sessionNotes">Notes (optional)</label>
+              <textarea id="sessionNotes" name="sessionNotes" rows="3" placeholder="How did it feel? Any technique focus?"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="sessionConditions">Conditions (optional)</label>
+              <input type="text" id="sessionConditions" name="sessionConditions" placeholder="e.g., 20°C, slight chop, clear water">
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="session-submit-btn">Log Session</button>
+              <button type="button" class="btn btn-secondary" id="session-cancel-btn" style="display: none;">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Sessions List -->
+      <div class="card">
+        <div class="card-header">
+          <h3>All Sessions</h3>
+          <button id="sessions-export-btn" class="btn btn-secondary btn-small">
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+        </div>
+        <div class="card-body">
+          <div id="sessions-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- DATA TAB -->
+    <!-- ============================================ -->
+    <section id="tab-data" class="tab-content">
+      <h2 class="section-title">Data Management</h2>
+
+      <!-- Storage Info -->
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            Storage Information
+          </h3>
+        </div>
+        <div class="card-body">
+          <p id="storage-info">Storage method: <strong id="storage-method">--</strong></p>
+          <p class="text-muted">Your data is stored locally in your browser. Use export/import to keep backups.</p>
+        </div>
+      </div>
+
+      <!-- Export Data -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Export Data</h3>
+        </div>
+        <div class="card-body">
+          <p style="color: var(--color-text-muted); margin-bottom: var(--spacing-md);">Download all your training data as a JSON file. Keep this file safe - it's your backup!</p>
+          <button id="export-btn" class="btn btn-primary">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Backup
+          </button>
+        </div>
+      </div>
+
+      <!-- Import Data -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Import Data</h3>
+        </div>
+        <div class="card-body">
+          <p style="color: var(--color-text-muted); margin-bottom: var(--spacing-md);">Restore your training data from a previously exported file.</p>
+
+          <div class="form-group">
+            <label for="import-strategy">Import Strategy</label>
+            <select id="import-strategy">
+              <option value="replace">Replace All (delete existing data, use imported data)</option>
+              <option value="merge">Merge (combine with existing, keep newest sessions)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="import-file">Choose File</label>
+            <input type="file" id="import-file" accept=".json">
+          </div>
+
+          <button id="import-btn" class="btn btn-primary">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import Backup
+          </button>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="card card-danger">
+        <div class="card-header">
+          <h3>
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="color: var(--color-danger);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Danger Zone
+          </h3>
+        </div>
+        <div class="card-body">
+          <p style="color: var(--color-text-muted); margin-bottom: var(--spacing-md);"><strong>Warning:</strong> This will permanently delete all your data. Export a backup first!</p>
+          <button id="clear-all-btn" class="btn btn-danger">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Clear All Data
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>Let's Keep Swimming &copy; 2026 | Powered by Claude AI</p>
+      <p class="text-muted">Data stored locally in your browser. Remember to export regular backups.</p>
+    </div>
+  </footer>
+
+  <!-- Load JavaScript modules -->
+  <script src="icons.js"></script>
+  <script src="db.js"></script>
+  <script src="prompts.js"></script>
+  <script src="charts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
