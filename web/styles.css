@@ -163,10 +163,16 @@ main {
   padding: var(--spacing-sm) 0;
 }
 
-.nav-container {
+.nav-tabs .nav-container {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+}
+
+/* Ensure the nav aligns with header right side */
+.nav-tabs .container {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .nav-group {
