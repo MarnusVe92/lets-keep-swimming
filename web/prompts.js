@@ -40,22 +40,25 @@ function calculateTrainingSummary(sessions, today) {
     ? last7Days.reduce((sum, s) => sum + s.rpe, 0) / last7Days.length
     : 0;
 
-  // Calculate consecutive training days (working backwards from today)
+  // Calculate consecutive training days (working backwards from today, INCLUDING today)
   let consecutive_days_trained = 0;
   const sortedSessions = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   let checkDate = new Date(todayDate);
-  checkDate.setDate(checkDate.getDate() - 1); // Start with yesterday
+  // Start with today - if there's a session today, count it
 
-  for (let i = 0; i < 7; i++) { // Check up to 7 days back
+  for (let i = 0; i < 14; i++) { // Check up to 14 days back
     const checkDateStr = checkDate.toISOString().split('T')[0];
     const hasSession = sortedSessions.some(s => s.date === checkDateStr);
 
     if (hasSession) {
       consecutive_days_trained++;
       checkDate.setDate(checkDate.getDate() - 1);
+    } else if (i === 0) {
+      // No session today - start checking from yesterday
+      checkDate.setDate(checkDate.getDate() - 1);
     } else {
-      break; // Stop at first day without training
+      break; // Stop at first gap after streak started
     }
   }
 

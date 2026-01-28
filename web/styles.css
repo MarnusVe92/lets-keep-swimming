@@ -610,6 +610,13 @@ main {
   font-weight: 600;
 }
 
+.streak-dates {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.65rem;
+  color: var(--color-text-light);
+}
+
 /* ============================================ */
 /* Charts Row */
 /* ============================================ */

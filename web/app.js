@@ -249,7 +249,21 @@ function loadDashboard() {
 
   // Calculate and display best streak
   const bestStreak = calculateBestStreak(state.sessions);
-  document.getElementById('streak-best-value').textContent = bestStreak;
+  document.getElementById('streak-best-value').textContent = bestStreak.count;
+
+  // Show date range for best streak
+  const datesEl = document.getElementById('streak-best-dates');
+  if (bestStreak.count > 0 && bestStreak.startDate && bestStreak.endDate) {
+    const startFormatted = new Date(bestStreak.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endFormatted = new Date(bestStreak.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (bestStreak.startDate === bestStreak.endDate) {
+      datesEl.textContent = `(${startFormatted})`;
+    } else {
+      datesEl.textContent = `(${startFormatted} - ${endFormatted})`;
+    }
+  } else {
+    datesEl.textContent = '';
+  }
 
   // Update charts
   Charts.initCharts(state.profile, state.sessions);
@@ -392,16 +406,21 @@ function updateWeeklyGoals() {
 
 /**
  * Calculate best (longest) training streak from all sessions
- * Returns the number of consecutive days in the best streak
+ * Returns an object with count and date range
  */
 function calculateBestStreak(sessions) {
-  if (sessions.length === 0) return 0;
+  if (sessions.length === 0) {
+    return { count: 0, startDate: null, endDate: null };
+  }
 
   // Sort sessions by date
   const sorted = [...sessions].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   let bestStreak = 1;
   let currentStreak = 1;
+  let bestStartIdx = 0;
+  let bestEndIdx = 0;
+  let currentStartIdx = 0;
 
   for (let i = 1; i < sorted.length; i++) {
     const prevDate = new Date(sorted[i - 1].date);
@@ -414,17 +433,26 @@ function calculateBestStreak(sessions) {
     if (diffDays === 1) {
       // Consecutive day
       currentStreak++;
-      bestStreak = Math.max(bestStreak, currentStreak);
+      if (currentStreak > bestStreak) {
+        bestStreak = currentStreak;
+        bestStartIdx = currentStartIdx;
+        bestEndIdx = i;
+      }
     } else if (diffDays === 0) {
       // Same day - don't break streak but don't increment
       continue;
     } else {
       // Gap in training - reset streak
       currentStreak = 1;
+      currentStartIdx = i;
     }
   }
 
-  return bestStreak;
+  return {
+    count: bestStreak,
+    startDate: sorted[bestStartIdx].date,
+    endDate: sorted[bestEndIdx].date
+  };
 }
 
 /**
