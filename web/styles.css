@@ -697,6 +697,154 @@ main {
   color: var(--color-text);
 }
 
+/* 10-Week History Rings */
+.week-history {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-glass-border);
+}
+
+.week-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.week-history-legend {
+  display: flex;
+  gap: var(--spacing-md);
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot.complete {
+  background: var(--color-secondary);
+}
+
+.legend-dot.partial {
+  background: var(--color-primary);
+}
+
+.legend-dot.low {
+  background: var(--color-warning);
+}
+
+.week-rings {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+  overflow-x: auto;
+  padding: var(--spacing-xs) 0;
+}
+
+.week-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.week-ring-svg {
+  width: 44px;
+  height: 44px;
+  transform: rotate(-90deg);
+}
+
+.week-ring-bg {
+  fill: none;
+  stroke: var(--color-bg);
+  stroke-width: 4;
+}
+
+.week-ring-progress {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.week-ring-progress.complete {
+  stroke: var(--color-secondary);
+}
+
+.week-ring-progress.partial {
+  stroke: var(--color-primary);
+}
+
+.week-ring-progress.low {
+  stroke: var(--color-warning);
+}
+
+.week-ring-progress.empty {
+  stroke: var(--color-text-light);
+  opacity: 0.3;
+}
+
+.week-ring-label {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.week-ring-percent {
+  position: absolute;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.week-ring-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.week-ring-value {
+  position: absolute;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text);
+  transform: rotate(90deg);
+}
+
+/* Responsive adjustments for rings */
+@media (max-width: 480px) {
+  .week-rings {
+    justify-content: flex-start;
+  }
+
+  .week-ring-svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .week-ring-value {
+    font-size: 0.55rem;
+  }
+
+  .week-history-legend {
+    display: none;
+  }
+}
+
 /* ============================================ */
 /* Sessions - Activity Cards */
 /* ============================================ */

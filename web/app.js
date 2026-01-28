@@ -402,6 +402,86 @@ function updateWeeklyGoals() {
     sessionsFill.classList.add('behind');
     document.getElementById('goal-sessions-status').textContent = 'Keep going!';
   }
+
+  // Render 10-week history rings
+  renderWeekRings(targetDistance);
+}
+
+/**
+ * Render 10-week history as circular progress rings
+ */
+function renderWeekRings(weeklyTarget) {
+  const container = document.getElementById('week-rings');
+  if (!container) return;
+
+  // Calculate weekly data for past 10 weeks
+  const weekData = [];
+  const today = new Date();
+
+  for (let i = 9; i >= 0; i--) {
+    // Get Monday of that week
+    const weekStart = new Date(today);
+    const dayOfWeek = weekStart.getDay();
+    weekStart.setDate(weekStart.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) - (i * 7));
+    weekStart.setHours(0, 0, 0, 0);
+
+    // Get Sunday of that week
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    // Filter sessions for this week
+    const weekSessions = state.sessions.filter(s => {
+      const sessionDate = new Date(s.date);
+      return sessionDate >= weekStart && sessionDate <= weekEnd;
+    });
+
+    // Calculate distance
+    const distance = weekSessions.reduce((sum, s) => sum + s.distance_m, 0);
+    const percentage = Math.round((distance / weeklyTarget) * 100);
+
+    // Format week label
+    const weekLabel = i === 0 ? 'This' :
+                      i === 1 ? 'Last' :
+                      `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+
+    weekData.push({
+      label: weekLabel,
+      distance,
+      percentage,
+      weekStart
+    });
+  }
+
+  // Render SVG rings
+  const circumference = 2 * Math.PI * 16; // radius = 16
+
+  container.innerHTML = weekData.map(week => {
+    const progress = Math.min(100, week.percentage);
+    const offset = circumference - (progress / 100) * circumference;
+
+    let colorClass = 'empty';
+    if (week.distance > 0) {
+      if (week.percentage >= 100) colorClass = 'complete';
+      else if (week.percentage >= 50) colorClass = 'partial';
+      else colorClass = 'low';
+    }
+
+    return `
+      <div class="week-ring" title="Week of ${week.weekStart.toLocaleDateString()}: ${(week.distance/1000).toFixed(1)}km (${week.percentage}%)">
+        <div class="week-ring-container">
+          <svg class="week-ring-svg" viewBox="0 0 40 40">
+            <circle class="week-ring-bg" cx="20" cy="20" r="16"></circle>
+            <circle class="week-ring-progress ${colorClass}" cx="20" cy="20" r="16"
+              stroke-dasharray="${circumference}"
+              stroke-dashoffset="${offset}"></circle>
+          </svg>
+          <span class="week-ring-value">${week.percentage > 0 ? week.percentage + '%' : '-'}</span>
+        </div>
+        <span class="week-ring-label">${week.label}</span>
+      </div>
+    `;
+  }).join('');
 }
 
 /**
