@@ -67,10 +67,21 @@ async function init() {
  * Set up all event listeners
  */
 function setupEventListeners() {
-  // Tab switching
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  // Tab switching (desktop nav and mobile nav)
+  document.querySelectorAll('.tab-btn, .mobile-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchTab(btn.dataset.tab);
+      closeMobileNav(); // Close mobile nav when tab is selected
+    });
   });
+
+  // Mobile navigation
+  document.getElementById('hamburger-btn').addEventListener('click', toggleMobileNav);
+  document.getElementById('mobile-nav-close').addEventListener('click', closeMobileNav);
+  document.getElementById('mobile-nav-overlay').addEventListener('click', closeMobileNav);
+
+  // Scroll detection for header collapse
+  setupScrollHandler();
 
   // Profile form
   document.getElementById('profile-form').addEventListener('submit', handleProfileSubmit);
@@ -104,13 +115,70 @@ function setupEventListeners() {
 }
 
 /**
+ * Set up scroll handler for header collapse
+ */
+function setupScrollHandler() {
+  const header = document.getElementById('main-header');
+  const scrollThreshold = 50;
+
+  window.addEventListener('scroll', () => {
+    const currentScroll = window.pageYOffset;
+
+    // Add/remove scrolled class based on scroll position
+    if (currentScroll > scrollThreshold) {
+      header.classList.add('scrolled');
+    } else {
+      header.classList.remove('scrolled');
+    }
+  }, { passive: true });
+}
+
+/**
+ * Toggle mobile navigation drawer
+ */
+function toggleMobileNav() {
+  const hamburger = document.getElementById('hamburger-btn');
+  const mobileNav = document.getElementById('mobile-nav');
+  const overlay = document.getElementById('mobile-nav-overlay');
+
+  const isOpen = mobileNav.classList.contains('active');
+
+  if (isOpen) {
+    closeMobileNav();
+  } else {
+    hamburger.classList.add('active');
+    hamburger.setAttribute('aria-expanded', 'true');
+    mobileNav.classList.add('active');
+    mobileNav.setAttribute('aria-hidden', 'false');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Prevent scroll when menu open
+  }
+}
+
+/**
+ * Close mobile navigation drawer
+ */
+function closeMobileNav() {
+  const hamburger = document.getElementById('hamburger-btn');
+  const mobileNav = document.getElementById('mobile-nav');
+  const overlay = document.getElementById('mobile-nav-overlay');
+
+  hamburger.classList.remove('active');
+  hamburger.setAttribute('aria-expanded', 'false');
+  mobileNav.classList.remove('active');
+  mobileNav.setAttribute('aria-hidden', 'true');
+  overlay.classList.remove('active');
+  document.body.style.overflow = ''; // Restore scroll
+}
+
+/**
  * Switch between tabs
  */
 function switchTab(tabName) {
   state.currentView = tabName;
 
-  // Update tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  // Update tab buttons (both desktop and mobile)
+  document.querySelectorAll('.tab-btn, .mobile-nav-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
 
