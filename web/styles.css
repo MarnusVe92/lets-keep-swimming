@@ -819,10 +819,9 @@ main {
 
 .week-ring-value {
   position: absolute;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
   color: var(--color-text);
-  transform: rotate(90deg);
 }
 
 /* Responsive adjustments for rings */
