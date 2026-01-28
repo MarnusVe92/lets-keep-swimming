@@ -165,14 +165,14 @@ main {
 
 .nav-tabs .nav-container {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
 }
 
-/* Ensure the nav aligns with header right side */
+/* Ensure the nav aligns with header left side */
 .nav-tabs .container {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .nav-group {
