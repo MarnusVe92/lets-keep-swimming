@@ -233,13 +233,49 @@
         <div class="card">
           <div class="card-header">
             <h3>Tomorrow's Session</h3>
-            <button id="copy-coaching-btn" class="btn btn-secondary btn-small">
-              <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copy
-            </button>
+            <div class="card-header-actions">
+              <button id="copy-coaching-btn" class="btn btn-secondary btn-small">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+            </div>
           </div>
           <div class="card-body">
+            <!-- Adjustment Controls -->
+            <div class="coach-adjustments" id="coach-adjustments">
+              <div class="adjustment-group">
+                <label>Type</label>
+                <div class="toggle-group">
+                  <button class="toggle-btn active" data-type="pool" id="toggle-pool">
+                    <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 14h20"/><path d="M6 6v12"/><path d="M10 6v12"/><path d="M14 6v12"/><path d="M18 6v12"/></svg>
+                    Pool
+                  </button>
+                  <button class="toggle-btn" data-type="open_water" id="toggle-openwater">
+                    <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M2 12c2-2 4-3 6-3s4 1 6 3 4 3 6 3 4-1 6-3"/><path d="M2 6c2-2 4-3 6-3s4 1 6 3 4 3 6 3 4-1 6-3"/><path d="M2 18c2-2 4-3 6-3s4 1 6 3 4 3 6 3 4-1 6-3"/></svg>
+                    Open Water
+                  </button>
+                </div>
+              </div>
+              <div class="adjustment-group">
+                <label for="adjust-distance">Distance (m)</label>
+                <input type="number" id="adjust-distance" min="100" max="10000" step="100" class="adjust-input">
+              </div>
+              <button id="adapt-session-btn" class="btn btn-secondary">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Adapt Session
+              </button>
+            </div>
+
             <div id="coaching-display"></div>
+
+            <!-- Log Session from Coach -->
+            <div class="coach-commit" id="coach-commit">
+              <button id="log-from-coach-btn" class="btn btn-primary btn-large">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><polyline points="20 6 9 17 4 12"/></svg>
+                Log This Session
+              </button>
+              <p class="text-muted">Mark this session as completed and add it to your training log</p>
+            </div>
           </div>
         </div>
       </div>

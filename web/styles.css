@@ -1035,6 +1035,158 @@ small {
   margin-bottom: var(--spacing-xs);
 }
 
+/* Coach Adjustments */
+.coach-adjustments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  align-items: flex-end;
+  padding: var(--spacing-md);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.adjustment-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.adjustment-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 4px;
+  background: var(--color-surface);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-glass-border);
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  color: var(--color-text);
+}
+
+.toggle-btn.active {
+  background: var(--color-primary);
+  color: white;
+}
+
+.toggle-btn.active[data-type="open_water"] {
+  background: var(--color-secondary);
+}
+
+.adjust-input {
+  width: 100px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-glass-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  background: var(--color-surface);
+}
+
+.adjust-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+/* Workout Checklist */
+.workout-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.workout-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.workout-item:hover {
+  background: rgba(107, 159, 191, 0.08);
+}
+
+.workout-checkbox {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.workout-text {
+  font-size: 0.9rem;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.workout-item:has(.workout-checkbox:checked) .workout-text {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+/* Coach Commit Section */
+.coach-commit {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-glass-border);
+  text-align: center;
+}
+
+.coach-commit .btn {
+  margin-bottom: var(--spacing-sm);
+}
+
+.coach-commit .text-muted {
+  font-size: 0.8rem;
+}
+
+/* Card header actions */
+.card-header-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+/* Small spinner for adapt button */
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
 /* ============================================ */
 /* Footer */
 /* ============================================ */

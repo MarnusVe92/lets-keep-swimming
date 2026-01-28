@@ -18,6 +18,7 @@ let state = {
   currentView: 'dashboard',
   editingSessionId: null,
   coaching: null, // { recommendation, generatedAt, sessionCountAtGeneration }
+  currentCoaching: null, // Current coaching data being displayed (for adjustments)
 };
 
 /**
@@ -85,6 +86,12 @@ function setupEventListeners() {
   // Coaching
   document.getElementById('get-coaching-btn').addEventListener('click', getCoaching);
   document.getElementById('copy-coaching-btn').addEventListener('click', copyCoachingToClipboard);
+
+  // Coach adjustments
+  document.getElementById('toggle-pool').addEventListener('click', () => setCoachType('pool'));
+  document.getElementById('toggle-openwater').addEventListener('click', () => setCoachType('open_water'));
+  document.getElementById('adapt-session-btn').addEventListener('click', adaptSession);
+  document.getElementById('log-from-coach-btn').addEventListener('click', logSessionFromCoach);
 
   // Data management
   document.getElementById('export-btn').addEventListener('click', exportData);
@@ -411,23 +418,29 @@ function displayCoachingPretty(coaching) {
   const container = document.getElementById('coaching-display');
   const session = coaching.tomorrow_session;
 
+  // Store current coaching for adjustments
+  state.currentCoaching = coaching;
+
+  // Update adjustment controls
+  updateCoachAdjustments(session);
+
   let html = `
     <div class="coach-recommendation">
       <span class="coach-session-type ${session.type}">${session.type.replace('_', ' ').toUpperCase()}</span>
 
       ${session.type !== 'rest' ? `
         <div class="coach-detail">
-          <span class="coach-detail-icon">⏱️</span>
+          <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span><strong>${session.duration_min}</strong> minutes</span>
         </div>
         ${session.distance_m ? `
           <div class="coach-detail">
-            <span class="coach-detail-icon">📏</span>
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><path d="M8 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 4v16"/><path d="M12 4h4"/><path d="M12 8h3"/><path d="M12 12h4"/><path d="M12 16h3"/><path d="M12 20h4"/></svg>
             <span><strong>${session.distance_m}</strong> meters</span>
           </div>
         ` : ''}
         <div class="coach-detail">
-          <span class="coach-detail-icon">💪</span>
+          <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M6.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/><path d="M12.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/><line x1="4" y1="12" x2="6.5" y2="12"/><line x1="17.5" y1="12" x2="20" y2="12"/></svg>
           <span>Intensity: <strong>${session.intensity}</strong></span>
         </div>
       ` : ''}
@@ -435,9 +448,14 @@ function displayCoachingPretty(coaching) {
       ${session.structure && session.structure.length > 0 ? `
         <div class="coach-structure">
           <h4>Session Structure</h4>
-          <ol>
-            ${session.structure.map(step => `<li>${step}</li>`).join('')}
-          </ol>
+          <div class="workout-checklist">
+            ${session.structure.map((step, index) => `
+              <label class="workout-item">
+                <input type="checkbox" class="workout-checkbox" data-index="${index}">
+                <span class="workout-text">${step}</span>
+              </label>
+            `).join('')}
+          </div>
         </div>
       ` : ''}
 
@@ -455,7 +473,7 @@ function displayCoachingPretty(coaching) {
 
     ${coaching.flags && coaching.flags.length > 0 ? `
       <div class="coach-flags">
-        <h4>⚠️ Important Notes</h4>
+        <h4>Important Notes</h4>
         <ul>
           ${coaching.flags.map(f => `<li>${f}</li>`).join('')}
         </ul>
@@ -464,13 +482,234 @@ function displayCoachingPretty(coaching) {
 
     ${coaching.event_prep_tip ? `
       <div class="coach-tip">
-        <h4>💡 Event Prep Tip</h4>
+        <h4>Event Prep Tip</h4>
         <p>${coaching.event_prep_tip}</p>
       </div>
     ` : ''}
   `;
 
   container.innerHTML = html;
+
+  // Show/hide commit section based on session type
+  const commitSection = document.getElementById('coach-commit');
+  if (session.type === 'rest') {
+    commitSection.style.display = 'none';
+  } else {
+    commitSection.style.display = 'block';
+  }
+}
+
+/**
+ * Update the adjustment controls with current session data
+ */
+function updateCoachAdjustments(session) {
+  // Update type toggle
+  const poolBtn = document.getElementById('toggle-pool');
+  const openWaterBtn = document.getElementById('toggle-openwater');
+
+  if (session.type === 'pool') {
+    poolBtn.classList.add('active');
+    openWaterBtn.classList.remove('active');
+  } else if (session.type === 'open_water') {
+    openWaterBtn.classList.add('active');
+    poolBtn.classList.remove('active');
+  }
+
+  // Update distance input
+  const distanceInput = document.getElementById('adjust-distance');
+  if (session.distance_m) {
+    distanceInput.value = session.distance_m;
+  }
+
+  // Show/hide adjustments for rest days
+  const adjustments = document.getElementById('coach-adjustments');
+  if (session.type === 'rest') {
+    adjustments.style.display = 'none';
+  } else {
+    adjustments.style.display = 'flex';
+  }
+}
+
+/**
+ * Set the coach session type (pool or open_water)
+ */
+function setCoachType(type) {
+  const poolBtn = document.getElementById('toggle-pool');
+  const openWaterBtn = document.getElementById('toggle-openwater');
+
+  if (type === 'pool') {
+    poolBtn.classList.add('active');
+    openWaterBtn.classList.remove('active');
+  } else {
+    openWaterBtn.classList.add('active');
+    poolBtn.classList.remove('active');
+  }
+}
+
+/**
+ * Adapt the session based on user adjustments
+ * Calls the API to regenerate structure for new type/distance
+ */
+async function adaptSession() {
+  if (!state.currentCoaching) {
+    alert('No coaching recommendation to adapt');
+    return;
+  }
+
+  const newType = document.getElementById('toggle-pool').classList.contains('active') ? 'pool' : 'open_water';
+  const newDistance = parseInt(document.getElementById('adjust-distance').value) || state.currentCoaching.tomorrow_session.distance_m;
+
+  // Show loading state
+  const adaptBtn = document.getElementById('adapt-session-btn');
+  const originalText = adaptBtn.innerHTML;
+  adaptBtn.innerHTML = `<div class="spinner-small"></div> Adapting...`;
+  adaptBtn.disabled = true;
+
+  try {
+    // Build adaptation request
+    const adaptRequest = {
+      original_session: state.currentCoaching.tomorrow_session,
+      new_type: newType,
+      new_distance: newDistance,
+      profile: state.profile
+    };
+
+    const response = await fetch('http://localhost:3000/api/adapt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(adaptRequest)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to adapt session');
+    }
+
+    const adaptedSession = await response.json();
+
+    // Update the current coaching with adapted session
+    state.currentCoaching.tomorrow_session = adaptedSession;
+
+    // Re-display the coaching
+    displayCoachingPretty(state.currentCoaching);
+
+    // Save the updated coaching
+    await DB.saveCoaching(state.currentCoaching, state.sessions.length);
+    state.coaching = {
+      recommendation: state.currentCoaching,
+      generatedAt: new Date().toISOString(),
+      sessionCountAtGeneration: state.sessions.length
+    };
+
+  } catch (error) {
+    console.error('Error adapting session:', error);
+    // Fallback: manually adapt without API call
+    adaptSessionLocally(newType, newDistance);
+  } finally {
+    adaptBtn.innerHTML = originalText;
+    adaptBtn.disabled = false;
+  }
+}
+
+/**
+ * Local fallback for adapting session without API call
+ */
+function adaptSessionLocally(newType, newDistance) {
+  if (!state.currentCoaching) return;
+
+  const session = state.currentCoaching.tomorrow_session;
+
+  // Update type
+  session.type = newType;
+
+  // Update distance
+  if (newDistance && newDistance !== session.distance_m) {
+    const oldDistance = session.distance_m || 1500;
+    const ratio = newDistance / oldDistance;
+
+    session.distance_m = newDistance;
+
+    // Scale the structure proportionally if possible
+    if (session.structure && session.structure.length > 0) {
+      session.structure = session.structure.map(step => {
+        // Try to scale any distances mentioned in the step
+        return step.replace(/(\d+)m/g, (_, num) => {
+          const scaled = Math.round(parseInt(num) * ratio / 50) * 50; // Round to nearest 50
+          return `${scaled}m`;
+        });
+      });
+    }
+
+    // Update duration estimate based on new distance
+    if (session.duration_min) {
+      session.duration_min = Math.round(session.duration_min * ratio);
+    }
+  }
+
+  // Add note about adaptation
+  state.currentCoaching.why_this = state.currentCoaching.why_this +
+    ` (Adapted to ${newType.replace('_', ' ')} - ${newDistance}m)`;
+
+  // Re-display
+  displayCoachingPretty(state.currentCoaching);
+}
+
+/**
+ * Log a session directly from the coaching recommendation
+ */
+async function logSessionFromCoach() {
+  if (!state.currentCoaching || !state.currentCoaching.tomorrow_session) {
+    alert('No coaching recommendation to log');
+    return;
+  }
+
+  const session = state.currentCoaching.tomorrow_session;
+
+  if (session.type === 'rest') {
+    alert('Rest days cannot be logged as sessions');
+    return;
+  }
+
+  // Get completed workout items
+  const checkboxes = document.querySelectorAll('.workout-checkbox');
+  const completedItems = [];
+  checkboxes.forEach((cb, idx) => {
+    if (cb.checked && session.structure && session.structure[idx]) {
+      completedItems.push(session.structure[idx]);
+    }
+  });
+
+  // Create the session object
+  const newSession = {
+    id: crypto.randomUUID(),
+    date: new Date().toISOString().split('T')[0], // Today's date
+    type: session.type,
+    distance_m: session.distance_m || 0,
+    time_min: session.duration_min || 0,
+    rpe: 5, // Default RPE - user can edit later
+    notes: `Coach recommendation. ${completedItems.length > 0 ? `Completed: ${completedItems.length}/${session.structure?.length || 0} items.` : ''}`,
+    conditions: ''
+  };
+
+  try {
+    // Save to database
+    await DB.addSession(newSession);
+    state.sessions.push(newSession);
+
+    // Show success
+    alert('Session logged successfully! You can edit the details in the Sessions tab.');
+
+    // Reload relevant views
+    if (state.currentView === 'dashboard') {
+      loadDashboard();
+    }
+
+    // Switch to sessions tab to show the new session
+    switchTab('sessions');
+
+  } catch (error) {
+    console.error('Error logging session:', error);
+    alert('Failed to log session. Please try again.');
+  }
 }
 
 /**
