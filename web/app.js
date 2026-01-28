@@ -19,6 +19,7 @@ let state = {
   editingSessionId: null,
   coaching: null, // { recommendation, generatedAt, sessionCountAtGeneration }
   currentCoaching: null, // Current coaching data being displayed (for adjustments)
+  originalCoaching: null, // Original coaching data (before any adaptations)
 };
 
 /**
@@ -414,12 +415,17 @@ function getTimeAgo(date) {
 /**
  * Display coaching in a nice visual format
  */
-function displayCoachingPretty(coaching) {
+function displayCoachingPretty(coaching, isAdapted = false) {
   const container = document.getElementById('coaching-display');
   const session = coaching.tomorrow_session;
 
   // Store current coaching for adjustments
   state.currentCoaching = coaching;
+
+  // Store original coaching only on first display (not after adaptations)
+  if (!isAdapted) {
+    state.originalCoaching = JSON.parse(JSON.stringify(coaching));
+  }
 
   // Update adjustment controls
   updateCoachAdjustments(session);
@@ -589,8 +595,8 @@ async function adaptSession() {
     // Update the current coaching with adapted session
     state.currentCoaching.tomorrow_session = adaptedSession;
 
-    // Re-display the coaching
-    displayCoachingPretty(state.currentCoaching);
+    // Re-display the coaching (mark as adapted to preserve original)
+    displayCoachingPretty(state.currentCoaching, true);
 
     // Save the updated coaching
     await DB.saveCoaching(state.currentCoaching, state.sessions.length);
@@ -612,53 +618,53 @@ async function adaptSession() {
 
 /**
  * Local fallback for adapting session without API call
+ * Always works from the ORIGINAL coaching data to avoid cumulative changes
  */
 function adaptSessionLocally(newType, newDistance) {
-  if (!state.currentCoaching) return;
+  if (!state.originalCoaching) return;
 
-  const session = state.currentCoaching.tomorrow_session;
-  const oldType = session.type;
-  const oldDistance = session.distance_m || 1500;
+  // Get original values
+  const originalSession = state.originalCoaching.tomorrow_session;
+  const originalType = originalSession.type;
+  const originalDistance = originalSession.distance_m || 1500;
+  const originalWhyThis = state.originalCoaching.why_this;
 
-  // Check if anything actually changed
-  const typeChanged = newType !== oldType;
-  const distanceChanged = newDistance && newDistance !== oldDistance;
+  // Check if anything changed from ORIGINAL
+  const typeChanged = newType !== originalType;
+  const distanceChanged = newDistance && newDistance !== originalDistance;
 
-  if (!typeChanged && !distanceChanged) {
-    return; // Nothing to adapt
-  }
+  // Create a fresh copy from original
+  const adaptedCoaching = JSON.parse(JSON.stringify(state.originalCoaching));
+  const session = adaptedCoaching.tomorrow_session;
 
   // Update type
   session.type = newType;
 
-  // Update distance and scale structure
+  // Update distance and scale structure from ORIGINAL
   if (distanceChanged) {
-    const ratio = newDistance / oldDistance;
+    const ratio = newDistance / originalDistance;
     session.distance_m = newDistance;
 
-    // Scale the structure proportionally if possible
-    if (session.structure && session.structure.length > 0) {
-      session.structure = session.structure.map(step => {
-        // Try to scale any distances mentioned in the step
+    // Scale the structure proportionally from original
+    if (originalSession.structure && originalSession.structure.length > 0) {
+      session.structure = originalSession.structure.map(step => {
         return step.replace(/(\d+)m/g, (_, num) => {
-          const scaled = Math.round(parseInt(num) * ratio / 50) * 50; // Round to nearest 50
+          const scaled = Math.round(parseInt(num) * ratio / 50) * 50;
           return `${scaled}m`;
         });
       });
     }
 
     // Update duration estimate based on new distance
-    if (session.duration_min) {
-      session.duration_min = Math.round(session.duration_min * ratio);
+    if (originalSession.duration_min) {
+      session.duration_min = Math.round(originalSession.duration_min * ratio);
     }
   }
 
   // Adapt structure for type change (pool vs open water)
   if (typeChanged && session.structure && session.structure.length > 0) {
     if (newType === 'open_water') {
-      // Convert pool structure to open water style
       session.structure = session.structure.map(step => {
-        // Replace "laps" with continuous swimming
         return step
           .replace(/(\d+)\s*x\s*(\d+)m/gi, (_, sets, dist) => {
             const total = parseInt(sets) * parseInt(dist);
@@ -667,8 +673,8 @@ function adaptSessionLocally(newType, newDistance) {
           .replace(/pool/gi, 'open water')
           .replace(/wall/gi, 'buoy');
       });
-    } else {
-      // Convert open water structure to pool style
+    } else if (originalType === 'open_water') {
+      // Only convert if original was open water
       session.structure = session.structure.map(step => {
         return step
           .replace(/continuous/gi, 'with turns')
@@ -678,17 +684,15 @@ function adaptSessionLocally(newType, newDistance) {
     }
   }
 
-  // Store original why_this if not already stored
-  if (!state.currentCoaching._originalWhyThis) {
-    state.currentCoaching._originalWhyThis = state.currentCoaching.why_this;
+  // Update why_this with adaptation note if changed
+  if (typeChanged || distanceChanged) {
+    adaptedCoaching.why_this = originalWhyThis +
+      ` (Adapted to ${newType.replace('_', ' ')} - ${newDistance}m)`;
   }
 
-  // Update why_this with adaptation note (don't append, replace)
-  state.currentCoaching.why_this = state.currentCoaching._originalWhyThis +
-    ` (Adapted to ${newType.replace('_', ' ')} - ${newDistance}m)`;
-
-  // Re-display
-  displayCoachingPretty(state.currentCoaching);
+  // Update current coaching and re-display (mark as adapted)
+  state.currentCoaching = adaptedCoaching;
+  displayCoachingPretty(adaptedCoaching, true);
 }
 
 /**
