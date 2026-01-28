@@ -617,15 +617,23 @@ function adaptSessionLocally(newType, newDistance) {
   if (!state.currentCoaching) return;
 
   const session = state.currentCoaching.tomorrow_session;
+  const oldType = session.type;
+  const oldDistance = session.distance_m || 1500;
+
+  // Check if anything actually changed
+  const typeChanged = newType !== oldType;
+  const distanceChanged = newDistance && newDistance !== oldDistance;
+
+  if (!typeChanged && !distanceChanged) {
+    return; // Nothing to adapt
+  }
 
   // Update type
   session.type = newType;
 
-  // Update distance
-  if (newDistance && newDistance !== session.distance_m) {
-    const oldDistance = session.distance_m || 1500;
+  // Update distance and scale structure
+  if (distanceChanged) {
     const ratio = newDistance / oldDistance;
-
     session.distance_m = newDistance;
 
     // Scale the structure proportionally if possible
@@ -645,8 +653,38 @@ function adaptSessionLocally(newType, newDistance) {
     }
   }
 
-  // Add note about adaptation
-  state.currentCoaching.why_this = state.currentCoaching.why_this +
+  // Adapt structure for type change (pool vs open water)
+  if (typeChanged && session.structure && session.structure.length > 0) {
+    if (newType === 'open_water') {
+      // Convert pool structure to open water style
+      session.structure = session.structure.map(step => {
+        // Replace "laps" with continuous swimming
+        return step
+          .replace(/(\d+)\s*x\s*(\d+)m/gi, (_, sets, dist) => {
+            const total = parseInt(sets) * parseInt(dist);
+            return `${total}m continuous`;
+          })
+          .replace(/pool/gi, 'open water')
+          .replace(/wall/gi, 'buoy');
+      });
+    } else {
+      // Convert open water structure to pool style
+      session.structure = session.structure.map(step => {
+        return step
+          .replace(/continuous/gi, 'with turns')
+          .replace(/open water/gi, 'pool')
+          .replace(/buoy/gi, 'wall');
+      });
+    }
+  }
+
+  // Store original why_this if not already stored
+  if (!state.currentCoaching._originalWhyThis) {
+    state.currentCoaching._originalWhyThis = state.currentCoaching.why_this;
+  }
+
+  // Update why_this with adaptation note (don't append, replace)
+  state.currentCoaching.why_this = state.currentCoaching._originalWhyThis +
     ` (Adapted to ${newType.replace('_', ' ')} - ${newDistance}m)`;
 
   // Re-display

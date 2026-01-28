@@ -999,12 +999,19 @@ small {
   padding: var(--spacing-md);
   margin: var(--spacing-md) 0;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .coach-why h4 {
   font-size: 0.8rem;
   color: var(--color-text-muted);
   margin-bottom: var(--spacing-xs);
+}
+
+.coach-why p {
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .coach-flags {
