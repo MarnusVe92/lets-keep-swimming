@@ -12,6 +12,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
 
@@ -122,12 +123,34 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.onrender.com')) {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all in production for now
+      // Reject requests from unknown origins
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true
 }));
 app.use(express.json({ limit: '1mb' }));
+
+// Rate limiting for expensive AI endpoints (prevents API cost abuse)
+const coachRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 requests per 15 minutes per IP
+  message: { error: 'Too many coaching requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// General rate limiter for all API endpoints
+const generalRateLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute per IP
+  message: { error: 'Too many requests. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply general rate limiting to all API routes
+app.use('/api/', generalRateLimiter);
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -379,7 +402,7 @@ Return ONLY the JSON object, no other text.`;
  *   today: "YYYY-MM-DD"
  * }
  */
-app.post('/api/coach', async (req, res) => {
+app.post('/api/coach', coachRateLimiter, async (req, res) => {
   try {
     const requestBody = req.body;
 
