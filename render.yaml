@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: lets-keep-swimming
+    runtime: node
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MOCK_MODE
+        sync: false  # Set in Render dashboard
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Set in Render dashboard (secret)
+      - key: FIREBASE_PROJECT_ID
+        sync: false  # Set in Render dashboard
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false  # Set in Render dashboard
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false  # Set in Render dashboard (secret)

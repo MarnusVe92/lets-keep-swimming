@@ -14,8 +14,8 @@
  */
 
 const DB_NAME = 'LetsKeepSwimming';
-const DB_VERSION = 1;
-const SCHEMA_VERSION = 1;
+const DB_VERSION = 2; // Bumped for events store
+const SCHEMA_VERSION = 2; // Bumped for events support
 
 // Storage state
 let storageMethod = null; // Will be 'indexeddb' or 'localstorage'
@@ -47,27 +47,43 @@ function openIndexedDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onerror = () => {
-      reject(new Error('IndexedDB not available'));
+    request.onerror = (event) => {
+      console.error('IndexedDB error:', event.target.error);
+      reject(new Error('IndexedDB not available: ' + (event.target.error?.message || 'Unknown error')));
+    };
+
+    request.onblocked = () => {
+      console.warn('IndexedDB blocked - please close other tabs using this app');
+      // Don't reject, just wait - it might unblock
     };
 
     request.onsuccess = (event) => {
+      console.log('IndexedDB opened successfully, version:', event.target.result.version);
       resolve(event.target.result);
     };
 
     // This runs only when database is created or version changes
     request.onupgradeneeded = (event) => {
+      console.log('IndexedDB upgrade needed from version', event.oldVersion, 'to', event.newVersion);
       const database = event.target.result;
 
       // Create object stores (like tables in SQL)
       if (!database.objectStoreNames.contains('profile')) {
         database.createObjectStore('profile');
+        console.log('Created profile store');
       }
       if (!database.objectStoreNames.contains('sessions')) {
         database.createObjectStore('sessions');
+        console.log('Created sessions store');
       }
       if (!database.objectStoreNames.contains('metadata')) {
         database.createObjectStore('metadata');
+        console.log('Created metadata store');
+      }
+      // v2: Add events store
+      if (!database.objectStoreNames.contains('events')) {
+        database.createObjectStore('events');
+        console.log('Created events store');
       }
     };
   });
@@ -192,6 +208,113 @@ async function deleteSession(id) {
   await saveSessions(filtered);
 }
 
+// ============================================
+// EVENTS
+// ============================================
+
+/**
+ * Save all events (overwrites existing)
+ */
+async function saveEvents(events) {
+  if (storageMethod === 'indexeddb') {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['events'], 'readwrite');
+      const store = transaction.objectStore('events');
+      const request = store.put(events, 'all');
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error('Failed to save events'));
+    });
+  } else {
+    localStorage.setItem('lks_events', JSON.stringify(events));
+    return Promise.resolve();
+  }
+}
+
+/**
+ * Get all events
+ */
+async function getEvents() {
+  if (storageMethod === 'indexeddb') {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['events'], 'readonly');
+      const store = transaction.objectStore('events');
+      const request = store.get('all');
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(new Error('Failed to load events'));
+    });
+  } else {
+    const data = localStorage.getItem('lks_events');
+    return Promise.resolve(data ? JSON.parse(data) : []);
+  }
+}
+
+/**
+ * Add a single event
+ */
+async function addEvent(event) {
+  const events = await getEvents();
+  events.push(event);
+  await saveEvents(events);
+}
+
+/**
+ * Update an event by ID
+ */
+async function updateEvent(id, updatedEvent) {
+  const events = await getEvents();
+  const index = events.findIndex(e => e.id === id);
+
+  if (index === -1) {
+    throw new Error('Event not found');
+  }
+
+  events[index] = { ...updatedEvent, id };
+  await saveEvents(events);
+}
+
+/**
+ * Delete an event by ID
+ */
+async function deleteEvent(id) {
+  const events = await getEvents();
+  const filtered = events.filter(e => e.id !== id);
+
+  if (filtered.length === events.length) {
+    throw new Error('Event not found');
+  }
+
+  await saveEvents(filtered);
+}
+
+/**
+ * Get active event (closest upcoming event)
+ */
+async function getActiveEvent() {
+  const events = await getEvents();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Filter to future events and sort by date
+  const futureEvents = events
+    .filter(e => new Date(e.date) >= today)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  return futureEvents.length > 0 ? futureEvents[0] : null;
+}
+
+/**
+ * Set an event as the active/primary event
+ */
+async function setActiveEvent(eventId) {
+  const events = await getEvents();
+  events.forEach(e => {
+    e.isActive = e.id === eventId;
+  });
+  await saveEvents(events);
+}
+
 /**
  * Export all data as JSON
  * Returns an object ready to be downloaded as a file
@@ -199,12 +322,14 @@ async function deleteSession(id) {
 async function exportData() {
   const profile = await getProfile();
   const sessions = await getSessions();
+  const events = await getEvents();
 
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     profile: profile,
-    sessions: sessions
+    sessions: sessions,
+    events: events
   };
 }
 
@@ -217,39 +342,60 @@ async function exportData() {
  *   - merge: Combine imported sessions with existing (by ID, keeping newest)
  */
 async function importData(data, strategy = 'replace') {
-  // Validate data structure
-  if (!data.schemaVersion || !data.sessions || !data.profile) {
+  // Validate data structure (allow v1 files without events)
+  if (!data.schemaVersion || !data.sessions) {
     throw new Error('Invalid import file: missing required fields');
   }
 
-  if (data.schemaVersion !== SCHEMA_VERSION) {
-    throw new Error(`Schema version mismatch: file is v${data.schemaVersion}, app expects v${SCHEMA_VERSION}`);
+  // Allow importing v1 files (migrate event data from profile)
+  if (data.schemaVersion === 1 && data.profile && data.profile.eventDate) {
+    // Migrate old profile event to events array
+    data.events = [{
+      id: crypto.randomUUID(),
+      name: 'Midmar Mile',
+      date: data.profile.eventDate,
+      distance: 1609,
+      goal: data.profile.goal || 'finish_comfortably',
+      targetTime: data.profile.targetTime || null,
+      isActive: true
+    }];
+    // Remove event fields from profile
+    delete data.profile.eventDate;
+    delete data.profile.goal;
+    delete data.profile.targetTime;
   }
 
   if (strategy === 'replace') {
     // Simple: just overwrite everything
-    await saveProfile(data.profile);
+    if (data.profile) await saveProfile(data.profile);
     await saveSessions(data.sessions);
+    if (data.events) await saveEvents(data.events);
   } else if (strategy === 'merge') {
-    // Merge strategy: combine sessions by ID, keep newest
+    // Merge strategy: combine by ID, keep newest
     const existingSessions = await getSessions();
     const existingProfile = await getProfile();
+    const existingEvents = await getEvents();
 
-    // Create a map of existing sessions by ID
+    // Merge sessions
     const sessionMap = new Map();
     existingSessions.forEach(s => sessionMap.set(s.id, s));
-
-    // Add/update with imported sessions (imported data wins if duplicate)
     data.sessions.forEach(s => sessionMap.set(s.id, s));
-
-    // Convert map back to array
     const mergedSessions = Array.from(sessionMap.values());
+
+    // Merge events
+    const eventMap = new Map();
+    existingEvents.forEach(e => eventMap.set(e.id, e));
+    if (data.events) {
+      data.events.forEach(e => eventMap.set(e.id, e));
+    }
+    const mergedEvents = Array.from(eventMap.values());
 
     // Use imported profile if no existing profile, otherwise keep existing
     const finalProfile = existingProfile || data.profile;
 
-    await saveProfile(finalProfile);
+    if (finalProfile) await saveProfile(finalProfile);
     await saveSessions(mergedSessions);
+    await saveEvents(mergedEvents);
   } else {
     throw new Error('Invalid strategy: must be "replace" or "merge"');
   }
@@ -320,10 +466,11 @@ async function getCoaching() {
  */
 async function clearAllData() {
   if (storageMethod === 'indexeddb') {
-    const transaction = db.transaction(['profile', 'sessions', 'metadata'], 'readwrite');
+    const transaction = db.transaction(['profile', 'sessions', 'metadata', 'events'], 'readwrite');
     transaction.objectStore('profile').clear();
     transaction.objectStore('sessions').clear();
     transaction.objectStore('metadata').clear();
+    transaction.objectStore('events').clear();
     return new Promise(resolve => {
       transaction.oncomplete = resolve;
     });
@@ -332,6 +479,7 @@ async function clearAllData() {
     localStorage.removeItem('lks_sessions');
     localStorage.removeItem('lks_metadata');
     localStorage.removeItem('lks_coaching');
+    localStorage.removeItem('lks_events');
     return Promise.resolve();
   }
 }
@@ -347,6 +495,13 @@ window.DB = {
   addSession,
   updateSession,
   deleteSession,
+  saveEvents,
+  getEvents,
+  addEvent,
+  updateEvent,
+  deleteEvent,
+  getActiveEvent,
+  setActiveEvent,
   exportData,
   importData,
   getStorageInfo,

@@ -5,15 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Let's Keep Swimming - Midmar Mile Training</title>
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
+
   <!-- Inter Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Leaflet for maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
   <link rel="stylesheet" href="styles.css">
 
   <!-- Chart.js for beautiful visualizations -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <!-- QR Code library for friend sharing -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
   <!-- Combined Header + Navigation -->
@@ -39,9 +55,18 @@
           <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
           <button class="tab-btn" data-tab="sessions">Sessions</button>
           <button class="tab-btn" data-tab="coach">Coach</button>
+          <button class="tab-btn" data-tab="social">Social</button>
         </div>
         <div class="nav-group nav-group-secondary">
-          <button class="tab-btn" data-tab="profile">Profile</button>
+          <button class="tab-btn tab-btn-profile" data-tab="profile">
+            <span class="nav-avatar" id="nav-avatar">
+              <span class="avatar-placeholder" id="avatar-placeholder">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <img src="" alt="Profile" class="avatar-image" id="avatar-image" style="display: none;">
+            </span>
+            Profile
+          </button>
           <button class="tab-btn" data-tab="data">Data</button>
         </div>
       </nav>
@@ -80,6 +105,10 @@
       <button class="mobile-nav-btn" data-tab="coach">
         <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M12 3c-1.5 0-2.5 1-2.5 2.5S10.5 8 12 8s2.5-1 2.5-2.5S13.5 3 12 3z"/><path d="M19 8h-1a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1z"/><path d="M5 8H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1z"/><path d="M12 10v4"/><path d="M8 16h8v4H8z"/></svg>
         Coach
+      </button>
+      <button class="mobile-nav-btn" data-tab="social">
+        <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Social
       </button>
     </div>
     <div class="mobile-nav-section">
@@ -146,12 +175,12 @@
           <div class="stat-label">Last 14 Days</div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" title="Shows the most common effort level from your sessions in the last 7 days. Easy, Moderate, or Hard.">
           <div class="stat-icon">
             <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M6.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/><path d="M12.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/><line x1="4" y1="12" x2="6.5" y2="12"/><line x1="17.5" y1="12" x2="20" y2="12"/></svg>
           </div>
           <div class="stat-value" id="stat-avg-rpe">--</div>
-          <div class="stat-label">Avg RPE (7 days)</div>
+          <div class="stat-label">Typical Effort</div>
         </div>
 
         <div class="stat-card">
@@ -365,36 +394,71 @@
       <div class="card">
         <div class="card-body">
           <form id="profile-form">
-            <!-- Event Date -->
-            <div class="form-group">
-              <label for="eventDate">
-                <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Event Date
+            <!-- Profile Picture -->
+            <div class="form-group profile-picture-section">
+              <label>
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Profile Picture
               </label>
-              <input type="date" id="eventDate" name="eventDate" required>
-              <small>When is your Midmar Mile?</small>
+              <div class="profile-picture-upload">
+                <div class="profile-picture-preview" id="profile-picture-preview">
+                  <div class="profile-picture-placeholder" id="profile-picture-placeholder">
+                    <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <img src="" alt="Profile Picture" class="profile-picture-img" id="profile-picture-img" style="display: none;">
+                </div>
+                <div class="profile-picture-actions">
+                  <input type="file" id="profile-picture-input" accept="image/*" style="display: none;">
+                  <button type="button" class="btn btn-secondary btn-small" id="upload-picture-btn">
+                    <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Upload Photo
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-small" id="remove-picture-btn" style="display: none;">
+                    <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Remove
+                  </button>
+                </div>
+              </div>
+              <small>This will appear next to your profile in the navigation</small>
             </div>
 
-            <!-- Goal -->
-            <div class="form-group">
-              <label for="goal">
-                <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                Goal
-              </label>
-              <select id="goal" name="goal" required>
-                <option value="finish_comfortably">Finish comfortably</option>
-                <option value="target_time">Target a specific time</option>
-              </select>
+            <!-- Personal Details -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  First Name
+                </label>
+                <input type="text" id="firstName" name="firstName" placeholder="Your first name">
+              </div>
+              <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="lastName" placeholder="Your last name">
+              </div>
             </div>
 
-            <!-- Target Time (conditional) -->
-            <div class="form-group" id="target-time-group" style="display: none;">
-              <label for="targetTime">
-                <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Target Time (MM:SS)
-              </label>
-              <input type="text" id="targetTime" name="targetTime" placeholder="45:00">
-              <small>Format: MM:SS (e.g., 45:00 for 45 minutes)</small>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="birthYear">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Birth Year
+                </label>
+                <input type="number" id="birthYear" name="birthYear" min="1920" max="2020" placeholder="e.g. 1990">
+                <small>Used for age-appropriate training recommendations</small>
+              </div>
+              <div class="form-group">
+                <label for="gender">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v2"/></svg>
+                  Gender
+                </label>
+                <select id="gender" name="gender">
+                  <option value="">Prefer not to say</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+                <small>Optional - helps tailor training recommendations</small>
+              </div>
             </div>
 
             <!-- Training Availability -->
@@ -498,14 +562,85 @@
     <!-- SESSIONS TAB -->
     <!-- ============================================ -->
     <section id="tab-sessions" class="tab-content">
-      <h2 class="section-title">Training Sessions</h2>
+      <h2 class="section-title">Training</h2>
 
-      <!-- Add Session Card -->
-      <div class="card">
-        <div class="card-header">
-          <h3 id="session-form-title">Log New Session</h3>
+      <!-- Sub-tabs for Sessions/Events -->
+      <div class="sub-tabs">
+        <button class="sub-tab-btn active" data-subtab="sessions-list-tab">
+          <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M4 22c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/><path d="M4 17c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/></svg>
+          Sessions
+        </button>
+        <button class="sub-tab-btn" data-subtab="events-list-tab">
+          <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="15" r="2"/></svg>
+          Events
+        </button>
+      </div>
+
+      <!-- Sessions Sub-tab -->
+      <div id="sessions-list-tab" class="sub-tab-content active">
+        <div class="card">
+          <div class="card-header">
+            <h3>All Sessions</h3>
+            <div class="card-header-actions">
+              <button id="add-session-btn" class="btn btn-primary btn-small">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add
+              </button>
+              <button id="sessions-import-btn" class="btn btn-secondary btn-small">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import
+              </button>
+              <button id="sessions-export-btn" class="btn btn-secondary btn-small">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="sessions-list"></div>
+          </div>
         </div>
-        <div class="card-body">
+      </div>
+
+      <!-- Events Sub-tab -->
+      <div id="events-list-tab" class="sub-tab-content">
+        <div class="card">
+          <div class="card-header">
+            <h3>Upcoming Events</h3>
+            <div class="card-header-actions">
+              <button id="add-event-btn" class="btn btn-primary btn-small">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Event
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="events-list"></div>
+          </div>
+        </div>
+
+        <!-- Past Events -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Past Events</h3>
+          </div>
+          <div class="card-body">
+            <div id="past-events-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Session Form Modal -->
+    <div class="modal-overlay" id="session-modal" style="display: none;">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="session-form-title">Log New Session</h3>
+          <button type="button" class="modal-close-btn" id="session-form-close-btn">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
           <form id="session-form">
             <input type="hidden" id="edit-session-id" value="">
 
@@ -547,20 +682,30 @@
             </div>
 
             <div class="form-group">
-              <label for="sessionRPE">
+              <label>
                 <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M6.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/><path d="M12.5 6.5a2.5 2.5 0 0 1 5 0v11a2.5 2.5 0 0 1-5 0v-11z"/></svg>
-                RPE (Rate of Perceived Exertion: 1-10)
+                How did it feel?
               </label>
-              <input type="range" id="sessionRPE" name="sessionRPE" min="1" max="10" value="5" required>
-              <div class="rpe-display">
-                <span id="rpe-value">5</span> / 10
-                <small id="rpe-description">Moderate</small>
+              <input type="hidden" id="sessionRPE" name="sessionRPE" value="moderate">
+              <div class="effort-selector">
+                <button type="button" class="effort-btn" data-effort="easy">
+                  <span class="effort-icon">😊</span>
+                  <span class="effort-label">Easy</span>
+                </button>
+                <button type="button" class="effort-btn active" data-effort="moderate">
+                  <span class="effort-icon">💪</span>
+                  <span class="effort-label">Moderate</span>
+                </button>
+                <button type="button" class="effort-btn" data-effort="hard">
+                  <span class="effort-icon">🔥</span>
+                  <span class="effort-label">Hard</span>
+                </button>
               </div>
             </div>
 
             <div class="form-group">
               <label for="sessionNotes">Notes (optional)</label>
-              <textarea id="sessionNotes" name="sessionNotes" rows="3" placeholder="How did it feel? Any technique focus?"></textarea>
+              <textarea id="sessionNotes" name="sessionNotes" rows="2" placeholder="How did it feel? Any technique focus?"></textarea>
             </div>
 
             <div class="form-group">
@@ -569,24 +714,491 @@
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn btn-primary" id="session-submit-btn">Log Session</button>
-              <button type="button" class="btn btn-secondary" id="session-cancel-btn" style="display: none;">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-large" id="session-submit-btn">Log Session</button>
+              <button type="button" class="btn btn-secondary btn-large" id="session-cancel-btn">Cancel</button>
             </div>
           </form>
         </div>
       </div>
+    </div>
 
-      <!-- Sessions List -->
-      <div class="card">
-        <div class="card-header">
-          <h3>All Sessions</h3>
-          <button id="sessions-export-btn" class="btn btn-secondary btn-small">
-            <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export
+    <!-- Import Modal -->
+    <div class="modal-overlay" id="import-modal" style="display: none;">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Import Sessions</h3>
+          <button type="button" class="modal-close-btn" id="import-modal-close-btn">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-        <div class="card-body">
-          <div id="sessions-list"></div>
+        <div class="modal-body">
+          <p class="text-muted mb-lg">Import swimming sessions from Samsung Health or other fitness apps.</p>
+
+          <div class="import-option">
+            <h4>Samsung Health Export</h4>
+            <p class="text-muted">Upload a CSV file exported from Samsung Health app.</p>
+            <input type="file" id="samsung-import-file" accept=".csv" style="display: none;">
+            <button type="button" class="btn btn-primary" id="samsung-import-btn">
+              <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Select Samsung Health CSV
+            </button>
+          </div>
+
+          <div class="import-option">
+            <h4>GPX File (Samsung Health / Garmin)</h4>
+            <p class="text-muted">Upload a GPX file exported from Samsung Health, Garmin, or other fitness apps.</p>
+            <input type="file" id="gpx-import-file" accept=".gpx" style="display: none;">
+            <button type="button" class="btn btn-primary" id="gpx-import-btn">
+              <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Select GPX File
+            </button>
+          </div>
+
+          <div class="import-option">
+            <h4>App Export</h4>
+            <p class="text-muted">Upload a JSON file previously exported from this app.</p>
+            <input type="file" id="app-import-file" accept=".json" style="display: none;">
+            <button type="button" class="btn btn-secondary" id="app-import-btn">
+              <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Select App JSON
+            </button>
+          </div>
+
+          <div id="import-preview" class="import-preview" style="display: none;">
+            <h4>Preview</h4>
+            <p id="import-preview-count"></p>
+            <div id="import-preview-list"></div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-primary" id="confirm-import-btn">Import Sessions</button>
+              <button type="button" class="btn btn-secondary" id="cancel-import-btn">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Form Modal -->
+    <div class="modal-overlay" id="event-modal" style="display: none;">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="event-form-title">Add New Event</h3>
+          <button type="button" class="modal-close-btn" id="event-form-close-btn">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="event-form">
+            <input type="hidden" id="edit-event-id" value="">
+
+            <div class="form-group">
+              <label for="eventName">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                Event Name
+              </label>
+              <input type="text" id="eventName" name="eventName" placeholder="e.g., Midmar Mile, 5K Open Water" required>
+              <small>What's the event called?</small>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="eventDate">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Event Date
+                </label>
+                <input type="date" id="eventDate" name="eventDate" required>
+              </div>
+              <div class="form-group">
+                <label for="eventDistance">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><path d="M8 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 4v16"/></svg>
+                  Distance (meters)
+                </label>
+                <input type="number" id="eventDistance" name="eventDistance" min="100" step="100" value="1609" required>
+                <small>1609m = 1 mile</small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="eventGoal">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                Your Goal
+              </label>
+              <select id="eventGoal" name="eventGoal" required>
+                <option value="finish_comfortably">Finish comfortably</option>
+                <option value="target_time">Target a specific time</option>
+                <option value="personal_best">Beat my personal best</option>
+                <option value="just_finish">Just finish (first time)</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="event-target-time-group" style="display: none;">
+              <label for="eventTargetTime">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Target Time (MM:SS)
+              </label>
+              <input type="text" id="eventTargetTime" name="eventTargetTime" placeholder="45:00">
+              <small>Format: MM:SS (e.g., 45:00 for 45 minutes)</small>
+            </div>
+
+            <div class="form-group">
+              <label for="eventNotes">Notes (optional)</label>
+              <textarea id="eventNotes" name="eventNotes" rows="2" placeholder="Any notes about this event..."></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-large" id="event-submit-btn">Add Event</button>
+              <button type="button" class="btn btn-secondary btn-large" id="event-cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Detail Modal -->
+    <div class="modal-overlay" id="session-detail-modal" style="display: none;">
+      <div class="modal modal-large">
+        <div class="modal-header">
+          <h3 id="session-detail-title">Session Details</h3>
+          <button type="button" class="modal-close-btn" id="session-detail-close-btn">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Map container (only shown for sessions with GPS data) -->
+          <div id="session-map-container" style="display: none;">
+            <div id="session-map"></div>
+            <div class="map-stats" id="map-stats"></div>
+          </div>
+
+          <!-- Session details -->
+          <div class="session-detail-content" id="session-detail-content">
+            <!-- Populated by JavaScript -->
+          </div>
+
+          <!-- Actions -->
+          <div class="session-detail-actions">
+            <button type="button" class="btn btn-secondary" id="session-detail-edit-btn">
+              <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit Session
+            </button>
+            <button type="button" class="btn btn-danger" id="session-detail-delete-btn">
+              <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SOCIAL TAB -->
+    <!-- ============================================ -->
+    <section id="tab-social" class="tab-content">
+      <h2 class="section-title">Social</h2>
+
+      <!-- Auth Status Banner -->
+      <div id="auth-banner" class="auth-banner">
+        <div class="auth-banner-content">
+          <div class="auth-banner-icon">
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="auth-banner-text">
+            <h3>Connect with Friends</h3>
+            <p>Sign in to share your progress and compare with friends</p>
+          </div>
+        </div>
+        <div class="auth-banner-actions">
+          <button id="sign-in-google-btn" class="btn btn-primary">
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Sign in with Google
+          </button>
+          <button id="sign-in-email-btn" class="btn btn-secondary">
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Sign in with Email
+          </button>
+        </div>
+      </div>
+
+      <!-- Signed In Content (hidden by default) -->
+      <div id="social-content" style="display: none;">
+        <!-- User Profile Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Your Profile
+            </h3>
+            <button id="sign-out-btn" class="btn btn-secondary btn-small">Sign Out</button>
+          </div>
+          <div class="card-body">
+            <div class="social-user-card">
+              <div class="social-user-avatar" id="social-user-avatar">
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="social-user-info">
+                <div class="social-user-name" id="social-user-name">--</div>
+                <div class="social-user-email" id="social-user-email">--</div>
+              </div>
+              <div class="sync-status" id="sync-status">
+                <span class="sync-dot synced"></span>
+                <span class="sync-text">Synced</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Your Friend Code -->
+        <div class="card card-primary">
+          <div class="card-header">
+            <h3>Your Friend Code</h3>
+          </div>
+          <div class="card-body">
+            <div class="friend-code-display">
+              <div class="friend-code" id="my-friend-code">------</div>
+              <button id="copy-friend-code-btn" class="btn btn-secondary btn-small">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+            </div>
+            <p class="text-muted">Share this code with friends so they can add you</p>
+            <div class="share-options">
+              <button id="show-qr-btn" class="btn btn-secondary">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
+                Show QR Code
+              </button>
+              <button id="share-link-btn" class="btn btn-secondary">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Share Link
+              </button>
+            </div>
+            <div id="qr-code-container" class="qr-code-container" style="display: none;">
+              <canvas id="qr-code-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add a Friend -->
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              Add a Friend
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="add-friend-form">
+              <div class="form-group">
+                <label for="friend-code-input">Enter Friend Code</label>
+                <div class="input-with-button">
+                  <input type="text" id="friend-code-input" placeholder="ABC123" maxlength="6" style="text-transform: uppercase;">
+                  <button id="add-friend-btn" class="btn btn-primary">Add Friend</button>
+                </div>
+              </div>
+              <div class="divider-with-text">
+                <span>or</span>
+              </div>
+              <button id="scan-qr-btn" class="btn btn-secondary btn-large">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M23 19a2 2 0 0 1-2 2h-3"/><path d="M21 14v-1"/><path d="M3 5a2 2 0 0 1 2-2h3"/><path d="M3 10V9"/><path d="M21 9a2 2 0 0 0-2-2h-3"/><path d="M21 19v1"/><path d="M3 19a2 2 0 0 0 2 2h3"/><path d="M3 14v1"/></svg>
+                Scan QR Code
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Friend Requests -->
+        <div class="card" id="friend-requests-card" style="display: none;">
+          <div class="card-header">
+            <h3>
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+              Friend Requests
+              <span class="badge" id="friend-requests-count">0</span>
+            </h3>
+          </div>
+          <div class="card-body">
+            <div id="friend-requests-list"></div>
+          </div>
+        </div>
+
+        <!-- Friends List -->
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              My Friends
+            </h3>
+          </div>
+          <div class="card-body">
+            <div id="friends-list" class="friends-list">
+              <div class="empty-state">
+                <p>No friends yet. Share your code to get started!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Weekly Leaderboard
+            </h3>
+          </div>
+          <div class="card-body">
+            <div id="leaderboard" class="leaderboard">
+              <div class="empty-state">
+                <p>Add friends to see the leaderboard</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Benchmarks -->
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+              How You Compare
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="benchmark-filters">
+              <div class="form-group">
+                <label for="benchmark-age">Age Group</label>
+                <select id="benchmark-age">
+                  <option value="all">All Ages</option>
+                  <option value="18-29">18-29</option>
+                  <option value="30-39">30-39</option>
+                  <option value="40-49">40-49</option>
+                  <option value="50-59">50-59</option>
+                  <option value="60+">60+</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="benchmark-gender">Gender</label>
+                <select id="benchmark-gender">
+                  <option value="all">All</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+            </div>
+            <div id="benchmark-results" class="benchmark-results">
+              <div class="benchmark-stat">
+                <div class="benchmark-label">Your Weekly Distance</div>
+                <div class="benchmark-value" id="benchmark-my-distance">-- m</div>
+                <div class="benchmark-comparison" id="benchmark-distance-comparison">
+                  <span class="benchmark-percentile">--</span>
+                  <span class="benchmark-avg">Avg: -- m</span>
+                </div>
+              </div>
+              <div class="benchmark-stat">
+                <div class="benchmark-label">Your Current Streak</div>
+                <div class="benchmark-value" id="benchmark-my-streak">-- days</div>
+                <div class="benchmark-comparison" id="benchmark-streak-comparison">
+                  <span class="benchmark-percentile">--</span>
+                  <span class="benchmark-avg">Avg: -- days</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-muted" style="margin-top: var(--spacing-md);">
+              <small>Based on anonymous data from swimmers who opted in. Your data is only included if you enable it in privacy settings.</small>
+            </p>
+          </div>
+        </div>
+
+        <!-- Privacy Settings -->
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Privacy Settings
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="privacy-toggles">
+              <label class="toggle-switch">
+                <input type="checkbox" id="privacy-share-volume" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Share weekly distance with friends</span>
+              </label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="privacy-share-streak" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Share current streak with friends</span>
+              </label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="privacy-share-pace">
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Share pace data with friends</span>
+              </label>
+              <div class="privacy-divider"></div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="privacy-contribute-anonymous" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Contribute anonymous data to benchmarks</span>
+              </label>
+            </div>
+            <p class="text-muted" style="margin-top: var(--spacing-md);">
+              <small>Your personal info is never shared. Friends only see stats you allow.</small>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Email Sign In Modal -->
+      <div class="modal-overlay" id="email-auth-modal" style="display: none;">
+        <div class="modal">
+          <div class="modal-header">
+            <h3 id="email-auth-title">Sign In with Email</h3>
+            <button type="button" class="modal-close-btn" id="email-auth-close-btn">
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="email-auth-form">
+              <div class="form-group">
+                <label for="auth-email">Email</label>
+                <input type="email" id="auth-email" required placeholder="you@example.com">
+              </div>
+              <div class="form-group">
+                <label for="auth-password">Password</label>
+                <input type="password" id="auth-password" required placeholder="Password" minlength="6">
+              </div>
+              <div class="form-group" id="auth-name-group" style="display: none;">
+                <label for="auth-display-name">Display Name</label>
+                <input type="text" id="auth-display-name" placeholder="Your name">
+              </div>
+              <div id="auth-error" class="auth-error" style="display: none;"></div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large" id="auth-submit-btn">Sign In</button>
+              </div>
+              <div class="auth-switch">
+                <span id="auth-switch-text">Don't have an account?</span>
+                <button type="button" class="btn-link" id="auth-switch-btn">Sign Up</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR Scanner Modal -->
+      <div class="modal-overlay" id="qr-scanner-modal" style="display: none;">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Scan Friend's QR Code</h3>
+            <button type="button" class="modal-close-btn" id="qr-scanner-close-btn">
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="qr-scanner-container">
+              <video id="qr-scanner-video" autoplay playsinline></video>
+              <div class="qr-scanner-overlay">
+                <div class="qr-scanner-frame"></div>
+              </div>
+            </div>
+            <p class="text-muted text-center">Point your camera at a friend's QR code</p>
+          </div>
         </div>
       </div>
     </section>
@@ -684,6 +1296,18 @@
   <script src="icons.js"></script>
   <script src="db.js"></script>
   <script src="prompts.js"></script>
+
+  <!-- Coach modules (deterministic planning with LLM polish) -->
+  <script src="coach/templates.js"></script>
+  <script src="coach/planner.js"></script>
+  <script src="coach/coachService.js"></script>
+  <script src="coach/coachView.js"></script>
+
+  <!-- Social modules (Firebase auth, sync, friends) -->
+  <script src="auth.js"></script>
+  <script src="sync.js"></script>
+  <script src="social.js"></script>
+
   <script src="charts.js"></script>
   <script src="app.js"></script>
 </body>
