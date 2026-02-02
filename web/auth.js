@@ -120,8 +120,13 @@ async function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     const result = await firebase.auth().signInWithPopup(provider);
 
+    // Parse display name into first/last name
+    const nameParts = (result.user.displayName || '').split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
     // Create user profile in Firestore if new user
-    await ensureUserProfile(result.user);
+    await ensureUserProfile(result.user, result.user.displayName, firstName, lastName);
 
     return result.user;
   } catch (error) {
@@ -167,6 +172,14 @@ async function signUpWithEmail(email, password, displayName) {
       await result.user.updateProfile({ displayName });
     }
 
+    // Send email verification
+    await result.user.sendEmailVerification({
+      url: window.location.origin,
+      handleCodeInApp: false
+    });
+
+    console.log('Verification email sent to:', email);
+
     // Create user profile in Firestore
     await ensureUserProfile(result.user, displayName);
 
@@ -195,7 +208,7 @@ async function signOut() {
 /**
  * Ensure user has a profile in Firestore
  */
-async function ensureUserProfile(user, displayName) {
+async function ensureUserProfile(user, displayName, firstName, lastName) {
   if (!authState.isConfigured || !user) return;
 
   try {
@@ -207,13 +220,23 @@ async function ensureUserProfile(user, displayName) {
       // Generate friend code
       const friendCode = generateFriendCode();
 
+      // Parse name if not provided
+      if (!firstName && displayName) {
+        const nameParts = displayName.split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+
       // Create new user profile
       const profile = {
         uid: user.uid,
         email: user.email,
         displayName: displayName || user.displayName || user.email.split('@')[0],
+        firstName: firstName || '',
+        lastName: lastName || '',
         photoURL: user.photoURL || null,
         friendCode: friendCode,
+        emailVerified: user.emailVerified,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         privacy: {
           shareVolume: true,
@@ -404,6 +427,52 @@ async function updateUserStats(stats) {
   }
 }
 
+/**
+ * Mask email for privacy (e.g., "tes***@exa***.com")
+ */
+function maskEmail(email) {
+  if (!email) return '';
+
+  const [localPart, domain] = email.split('@');
+  if (!domain) return email;
+
+  // Mask local part (show first 3, mask rest)
+  const maskedLocal = localPart.length > 3
+    ? localPart.substring(0, 3) + '***'
+    : localPart;
+
+  // Mask domain (show first 3 and extension, mask middle)
+  const domainParts = domain.split('.');
+  const mainDomain = domainParts[0];
+  const extension = domainParts.slice(1).join('.');
+
+  const maskedDomain = mainDomain.length > 3
+    ? mainDomain.substring(0, 3) + '***'
+    : mainDomain;
+
+  return `${maskedLocal}@${maskedDomain}.${extension}`;
+}
+
+/**
+ * Resend email verification
+ */
+async function resendVerificationEmail() {
+  if (!authState.user) {
+    throw new Error('No user signed in');
+  }
+
+  try {
+    await authState.user.sendEmailVerification({
+      url: window.location.origin,
+      handleCodeInApp: false
+    });
+    console.log('Verification email resent');
+  } catch (error) {
+    console.error('Error resending verification email:', error);
+    throw error;
+  }
+}
+
 // Export Auth module
 window.Auth = {
   init: initAuth,
@@ -419,6 +488,8 @@ window.Auth = {
   getUserProfile,
   updatePrivacySettings,
   updateUserStats,
+  maskEmail,
+  resendVerificationEmail,
   clearAuthError
 };
 

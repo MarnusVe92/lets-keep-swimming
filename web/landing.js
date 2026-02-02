@@ -112,11 +112,25 @@ document.getElementById('email-signup-form')?.addEventListener('submit', async (
 
   try {
     await Auth.signUpWithEmail(email, password, name);
+    // Show success message about verification email
+    showAuthSuccess(`Account created! Please check ${Auth.maskEmail(email)} for a verification link.`);
   } catch (error) {
     console.error('Email sign up error:', error);
     btn.disabled = false;
     btn.textContent = originalText;
   }
 });
+
+// Show success message
+function showAuthSuccess(message) {
+  const errorEl = document.getElementById('auth-error');
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
+    errorEl.style.background = '#dcfce7';
+    errorEl.style.borderColor = '#bbf7d0';
+    errorEl.style.color = '#166534';
+  }
+}
 
 console.log('Landing page authentication initialized');
