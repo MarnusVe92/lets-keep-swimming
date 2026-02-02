@@ -162,41 +162,7 @@ function initProfileHandlers() {
     });
   }
 
-  // Personal details form
-  const personalForm = document.getElementById('personal-details-form');
-  if (personalForm) {
-    personalForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      // Trigger the main profile form
-      const event = new Event('submit', { bubbles: true, cancelable: true });
-      const profileForm = document.getElementById('profile-form');
-      if (profileForm) profileForm.dispatchEvent(event);
-    });
-  }
-
-  // Training requirements form
-  const trainingForm = document.getElementById('training-requirements-form');
-  if (trainingForm) {
-    trainingForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      // Trigger the main profile form
-      const event = new Event('submit', { bubbles: true, cancelable: true });
-      const profileForm = document.getElementById('profile-form');
-      if (profileForm) profileForm.dispatchEvent(event);
-    });
-  }
-
-  // Coaching options form
-  const coachingForm = document.getElementById('coaching-options-form');
-  if (coachingForm) {
-    coachingForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      // Trigger the main profile form
-      const event = new Event('submit', { bubbles: true, cancelable: true });
-      const profileForm = document.getElementById('profile-form');
-      if (profileForm) profileForm.dispatchEvent(event);
-    });
-  }
+  // Note: Individual form handlers removed - now using single profile-form
 }
 
 // Initialize when DOM is ready

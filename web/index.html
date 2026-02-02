@@ -95,7 +95,7 @@
             </div>
             <button type="submit" class="btn btn-primary btn-large">Sign In</button>
             <button type="button" id="back-to-options-btn" class="btn btn-text">Back to options</button>
-          </form>
+          </div>
 
           <form id="email-signup-form" class="auth-form" style="display: none;">
             <div class="form-group">
@@ -113,7 +113,7 @@
             </div>
             <button type="submit" class="btn btn-primary btn-large">Create Account</button>
             <button type="button" id="back-to-options-btn-2" class="btn btn-text">Back to options</button>
-          </form>
+          </div>
         </div>
       </div>
 
@@ -498,6 +498,9 @@
     <section id="tab-profile" class="tab-content">
       <h2 class="section-title">Profile</h2>
 
+      <!-- Main Profile Form Wrapper -->
+      <form id="profile-form">
+
       <!-- Profile Summary Card -->
       <div class="card">
         <div class="card-body">
@@ -534,7 +537,7 @@
           <svg class="icon icon-outline chevron-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="card-body collapsible-content" id="personal-details-content">
-          <form id="personal-details-form">
+          <div id="personal-details-form-content">
             <!-- Profile Picture -->
             <div class="form-group profile-picture-section">
               <label>Profile Picture</label>
@@ -591,8 +594,8 @@
               </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Save Personal Details</button>
-          </form>
+            <button type="submit" class="btn btn-primary">Save Profile</button>
+          </div>
         </div>
       </div>
 
@@ -606,7 +609,7 @@
           <svg class="icon icon-outline chevron-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="card-body collapsible-content collapsed" id="training-requirements-content">
-          <form id="training-requirements-form">
+          <div id="training-requirements-form-content">
             <!-- Training Availability -->
             <div class="form-group">
               <label>Training Availability</label>
@@ -670,8 +673,7 @@
               <small>How much do you typically swim per week?</small>
             </div>
 
-            <button type="submit" class="btn btn-primary">Save Training Requirements</button>
-          </form>
+          </div>
         </div>
       </div>
 
@@ -685,7 +687,7 @@
           <svg class="icon icon-outline chevron-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="card-body collapsible-content collapsed" id="coaching-options-content">
-          <form id="coaching-options-form">
+          <div id="coaching-options-form-content">
             <!-- Coaching Tone -->
             <div class="form-group">
               <label for="tone">Coaching Tone</label>
@@ -696,10 +698,11 @@
               </select>
             </div>
 
-            <button type="submit" class="btn btn-primary">Save Coaching Options</button>
-          </form>
+          </div>
         </div>
       </div>
+
+      </div> <!-- End profile-form -->
 
       <!-- Account Management -->
       <div class="card">
@@ -882,7 +885,7 @@
               <button type="submit" class="btn btn-primary btn-large" id="session-submit-btn">Log Session</button>
               <button type="button" class="btn btn-secondary btn-large" id="session-cancel-btn">Cancel</button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
@@ -1013,7 +1016,7 @@
               <button type="submit" class="btn btn-primary btn-large" id="event-submit-btn">Add Event</button>
               <button type="button" class="btn btn-secondary btn-large" id="event-cancel-btn">Cancel</button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
@@ -1341,7 +1344,7 @@
                 <span id="auth-switch-text">Don't have an account?</span>
                 <button type="button" class="btn-link" id="auth-switch-btn">Sign Up</button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>
