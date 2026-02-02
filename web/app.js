@@ -135,7 +135,10 @@ function setupEventListeners() {
   setupScrollHandler();
 
   // Profile form
-  document.getElementById('profile-form').addEventListener('submit', handleProfileSubmit);
+  const profileForm = document.getElementById('profile-form');
+  if (profileForm) {
+    profileForm.addEventListener('submit', handleProfileSubmit);
+  }
   document.querySelectorAll('input[name="availability-type"]').forEach(radio => {
     radio.addEventListener('change', toggleAvailabilityType);
   });
