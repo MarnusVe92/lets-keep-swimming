@@ -11,12 +11,13 @@
 // Firebase configuration
 // IMPORTANT: Replace these with your own Firebase project credentials
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCJ0X9HaxuYPyWzcIADpZnNPcei8yKQbIc",
+  authDomain: "lets-keep-swimming.firebaseapp.com",
+  projectId: "lets-keep-swimming",
+  storageBucket: "lets-keep-swimming.firebasestorage.app",
+  messagingSenderId: "298160284764",
+  appId: "1:298160284764:web:8b648bd4a342c619177299",
+  measurementId: "G-DVLG88Z7RL"
 };
 
 // Auth state
