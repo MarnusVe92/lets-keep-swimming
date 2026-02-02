@@ -473,6 +473,49 @@ async function resendVerificationEmail() {
   }
 }
 
+/**
+ * Delete user account and all associated data
+ */
+async function deleteAccount() {
+  if (!authState.user) {
+    throw new Error('No user signed in');
+  }
+
+  try {
+    const uid = authState.user.uid;
+
+    // Delete Firestore data
+    if (authState.isConfigured) {
+      const db = firebase.firestore();
+
+      // Get user profile to find friend code
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        const friendCode = userDoc.data().friendCode;
+
+        // Delete friend code lookup
+        if (friendCode) {
+          await db.collection('friend_codes').doc(friendCode).delete();
+        }
+      }
+
+      // Delete user profile
+      await db.collection('users').doc(uid).delete();
+
+      // TODO: Delete friendships, sessions, and other user data
+      // This would require batch deletes or cloud functions for complete cleanup
+    }
+
+    // Delete Firebase Auth account
+    await authState.user.delete();
+
+    console.log('Account deleted successfully');
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    throw error;
+  }
+}
+
 // Export Auth module
 window.Auth = {
   init: initAuth,
@@ -490,6 +533,7 @@ window.Auth = {
   updateUserStats,
   maskEmail,
   resendVerificationEmail,
+  deleteAccount,
   clearAuthError
 };
 
