@@ -259,6 +259,21 @@ async function ensureUserProfile(user, displayName, firstName, lastName) {
       });
 
       console.log('Created user profile with friend code:', friendCode);
+    } else {
+      // User profile exists - check if friend code entry exists
+      const userData = doc.data();
+      if (userData.friendCode) {
+        const friendCodeRef = db.collection('friend_codes').doc(userData.friendCode);
+        const friendCodeDoc = await friendCodeRef.get();
+
+        if (!friendCodeDoc.exists) {
+          // Friend code entry is missing - create it
+          await friendCodeRef.set({
+            uid: user.uid
+          });
+          console.log('Created missing friend code entry:', userData.friendCode);
+        }
+      }
     }
   } catch (error) {
     console.error('Error creating user profile:', error);
