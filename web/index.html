@@ -206,6 +206,7 @@
         <span class="mobile-profile-avatar" id="mobile-profile-avatar">
           <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
         </span>
+        <span class="notification-badge" id="friend-request-badge" style="display: none;">0</span>
       </button>
     </div>
   </header>
@@ -213,6 +214,13 @@
   <!-- Mobile Profile Dropdown (slides down from header) -->
   <div class="mobile-profile-dropdown" id="mobile-profile-dropdown">
     <div class="mobile-profile-dropdown-content">
+      <!-- Friend Requests (shown when there are pending requests) -->
+      <button class="mobile-profile-dropdown-btn friend-requests-btn" id="mobile-friend-requests-btn" data-tab="social" style="display: none;">
+        <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        <span>Friend Requests</span>
+        <span class="dropdown-badge" id="mobile-dropdown-badge">0</span>
+        <svg class="icon icon-outline icon-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
       <button class="mobile-profile-dropdown-btn" data-tab="profile">
         <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
         <span>Profile Settings</span>

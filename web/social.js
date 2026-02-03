@@ -252,9 +252,66 @@ async function loadFriendRequests(uid) {
     }
 
     updateFriendRequestsUI();
+
+    // Set up real-time listener for new friend requests
+    setupFriendRequestListener(uid);
   } catch (error) {
     console.error('Error loading friend requests:', error);
   }
+}
+
+// Store unsubscribe function for cleanup
+let friendRequestUnsubscribe = null;
+
+/**
+ * Set up real-time listener for friend requests
+ */
+function setupFriendRequestListener(uid) {
+  if (!Auth.isFirebaseConfigured()) return;
+
+  // Clean up existing listener
+  if (friendRequestUnsubscribe) {
+    friendRequestUnsubscribe();
+  }
+
+  const db = firebase.firestore();
+
+  // Listen for changes to pending friend requests
+  friendRequestUnsubscribe = db.collection('friendships')
+    .where('user2', '==', uid)
+    .where('status', '==', 'pending')
+    .onSnapshot(async (snapshot) => {
+      socialState.friendRequests = [];
+
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        // Get requester's profile
+        try {
+          const requesterDoc = await db.collection('users').doc(data.user1).get();
+          if (requesterDoc.exists) {
+            const requesterData = requesterDoc.data();
+            socialState.friendRequests.push({
+              id: doc.id,
+              fromUid: data.user1,
+              displayName: requesterData.displayName,
+              photoURL: requesterData.photoURL,
+              createdAt: data.createdAt
+            });
+          }
+        } catch (err) {
+          console.error('Error fetching requester profile:', err);
+        }
+      }
+
+      updateFriendRequestsUI();
+
+      // Show notification for new requests
+      if (snapshot.docChanges().some(change => change.type === 'added')) {
+        console.log('🔔 New friend request received!');
+      }
+    }, (error) => {
+      console.error('Friend request listener error:', error);
+    });
 }
 
 /**
@@ -822,6 +879,31 @@ function updateFriendRequestsUI() {
   const card = document.getElementById('friend-requests-card');
   const container = document.getElementById('friend-requests-list');
   const badge = document.getElementById('friend-requests-count');
+  const mobileBadge = document.getElementById('friend-request-badge');
+
+  // Update mobile notification badge
+  if (mobileBadge) {
+    if (socialState.friendRequests.length > 0) {
+      mobileBadge.textContent = socialState.friendRequests.length;
+      mobileBadge.style.display = 'flex';
+    } else {
+      mobileBadge.style.display = 'none';
+    }
+  }
+
+  // Update mobile dropdown friend requests button
+  const mobileDropdownBtn = document.getElementById('mobile-friend-requests-btn');
+  const mobileDropdownBadge = document.getElementById('mobile-dropdown-badge');
+  if (mobileDropdownBtn) {
+    if (socialState.friendRequests.length > 0) {
+      mobileDropdownBtn.style.display = 'flex';
+      if (mobileDropdownBadge) {
+        mobileDropdownBadge.textContent = socialState.friendRequests.length;
+      }
+    } else {
+      mobileDropdownBtn.style.display = 'none';
+    }
+  }
 
   if (!card || !container) return;
 
