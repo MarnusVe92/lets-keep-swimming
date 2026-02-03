@@ -1138,6 +1138,19 @@ app.use((req, res, next) => {
 // Serve static files from web folder
 app.use(express.static(path.join(__dirname, '../web')));
 
+// PWA: Service Worker with correct scope
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(path.join(__dirname, '../web/sw.js'));
+});
+
+// PWA: Manifest with correct MIME type
+app.get('/manifest.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.sendFile(path.join(__dirname, '../web/manifest.json'));
+});
+
 // Serve index.html for the root route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../web/index.html'));
