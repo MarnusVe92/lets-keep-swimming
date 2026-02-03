@@ -14,10 +14,15 @@ Auth.onAuthStateChange((authState) => {
  * Update profile summary card
  */
 function updateProfileSummary(user) {
+  console.log('📷 updateProfileSummary called, photoURL:', user?.photoURL);
+
   // Update avatar
   const avatar = document.getElementById('profile-summary-avatar');
   if (avatar && user.photoURL) {
-    avatar.innerHTML = `<img src="${user.photoURL}" alt="Profile">`;
+    console.log('📷 Setting profile summary avatar with URL:', user.photoURL);
+    avatar.innerHTML = `<img src="${user.photoURL}" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" referrerpolicy="no-referrer" onerror="console.error('📷 Avatar image failed to load')">`;
+  } else {
+    console.log('📷 No avatar element or no photoURL', { avatar: !!avatar, photoURL: user?.photoURL });
   }
 
   // Update name
@@ -66,9 +71,29 @@ function initCollapsibleSections() {
 }
 
 /**
+ * Reset profile page buttons to default state
+ */
+function resetProfileButtons() {
+  const deleteBtn = document.getElementById('delete-account-btn');
+  if (deleteBtn) {
+    deleteBtn.disabled = false;
+    deleteBtn.innerHTML = '<svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete Account';
+  }
+
+  const resendBtn = document.getElementById('resend-verification-btn');
+  if (resendBtn) {
+    resendBtn.disabled = false;
+    resendBtn.textContent = 'Resend Verification Email';
+  }
+}
+
+/**
  * Initialize profile event handlers
  */
 function initProfileHandlers() {
+  // Reset buttons to default state on load
+  resetProfileButtons();
+
   // Handle resend verification email
   const resendBtn = document.getElementById('resend-verification-btn');
   if (resendBtn) {
@@ -93,6 +118,57 @@ function initProfileHandlers() {
       }
     });
   }
+
+  // Handle privacy toggles
+  const privacyToggles = [
+    'privacy-share-volume',
+    'privacy-share-streak',
+    'privacy-share-pace',
+    'privacy-contribute-anonymous'
+  ];
+
+  privacyToggles.forEach(id => {
+    const toggle = document.getElementById(id);
+    if (toggle) {
+      toggle.addEventListener('change', async () => {
+        const settings = {
+          shareVolume: document.getElementById('privacy-share-volume')?.checked ?? true,
+          shareStreak: document.getElementById('privacy-share-streak')?.checked ?? true,
+          sharePace: document.getElementById('privacy-share-pace')?.checked ?? false,
+          contributeAnonymous: document.getElementById('privacy-contribute-anonymous')?.checked ?? true
+        };
+
+        try {
+          await Auth.updatePrivacySettings(settings);
+          console.log('Privacy settings updated');
+        } catch (error) {
+          console.error('Error saving privacy settings:', error);
+        }
+      });
+    }
+  });
+
+  // Load privacy settings from profile
+  Auth.onAuthStateChange(async (authState) => {
+    if (authState.user && authState.isConfigured) {
+      try {
+        const userProfile = await Auth.getUserProfile();
+        if (userProfile?.privacy) {
+          const shareVolumeToggle = document.getElementById('privacy-share-volume');
+          const shareStreakToggle = document.getElementById('privacy-share-streak');
+          const sharePaceToggle = document.getElementById('privacy-share-pace');
+          const contributeToggle = document.getElementById('privacy-contribute-anonymous');
+
+          if (shareVolumeToggle) shareVolumeToggle.checked = userProfile.privacy.shareVolume !== false;
+          if (shareStreakToggle) shareStreakToggle.checked = userProfile.privacy.shareStreak !== false;
+          if (sharePaceToggle) sharePaceToggle.checked = userProfile.privacy.sharePace === true;
+          if (contributeToggle) contributeToggle.checked = userProfile.privacy.contributeAnonymous !== false;
+        }
+      } catch (error) {
+        console.error('Error loading privacy settings:', error);
+      }
+    }
+  });
 
   // Handle sign out from profile
   const signOutBtn = document.getElementById('sign-out-profile-btn');

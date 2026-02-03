@@ -117,7 +117,7 @@ main {
   padding: var(--spacing-md) 0;
   position: sticky;
   top: 0;
-  z-index: 200;
+  z-index: 260;
   transition: all 0.3s ease;
 }
 
@@ -408,6 +408,185 @@ main {
 }
 
 /* ============================================ */
+/* Mobile Bottom Navigation Bar */
+/* ============================================ */
+.mobile-bottom-nav {
+  display: none; /* Hidden on desktop */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  padding-bottom: calc(var(--spacing-xs) + env(safe-area-inset-bottom, 0px));
+  z-index: 200;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--spacing-xs) var(--spacing-xs);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: all 0.2s ease;
+}
+
+.mobile-bottom-nav-btn:hover,
+.mobile-bottom-nav-btn:active {
+  background: var(--color-bg);
+}
+
+.mobile-bottom-nav-btn.active {
+  color: var(--color-primary);
+}
+
+.mobile-bottom-nav-btn .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.mobile-bottom-nav-btn span {
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
+/* ============================================ */
+/* Mobile Profile Button & Dropdown */
+/* ============================================ */
+.mobile-profile-btn {
+  display: none; /* Hidden on desktop, shown on mobile */
+  align-items: center;
+  padding: 3px;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobile-profile-btn:hover,
+.mobile-profile-btn.active {
+  border-color: var(--color-primary);
+}
+
+.mobile-profile-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mobile-profile-avatar .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-secondary);
+}
+
+.mobile-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Profile Dropdown */
+.mobile-profile-dropdown {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 250;
+  transform: translateY(-100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s;
+}
+
+.mobile-profile-dropdown.active {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-profile-dropdown-content {
+  padding: var(--spacing-sm);
+}
+
+.mobile-profile-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 100%;
+  padding: var(--spacing-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.mobile-profile-dropdown-btn:hover,
+.mobile-profile-dropdown-btn:active {
+  background: var(--color-bg);
+}
+
+.mobile-profile-dropdown-btn .icon {
+  width: 22px;
+  height: 22px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.mobile-profile-dropdown-btn .icon-chevron {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  color: var(--color-text-muted);
+}
+
+.mobile-profile-dropdown-btn span {
+  flex: 1;
+}
+
+/* Profile Dropdown Overlay */
+.mobile-profile-overlay {
+  position: fixed;
+  top: 60px; /* Start below header */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 240;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.mobile-profile-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================ */
 /* Navigation - Pill Tabs */
 /* ============================================ */
 
@@ -461,18 +640,17 @@ main {
 /* Tab Content */
 /* ============================================ */
 .tab-content {
-  display: none;
-  padding: var(--spacing-lg) 0;
+  display: none !important;
   animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+  display: block !important;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.tab-content.active {
-  display: block;
 }
 
 .section-title {
@@ -2472,14 +2650,40 @@ small {
 /* Responsive Design */
 /* ============================================ */
 
-/* Tablet and below - show hamburger */
+/* Tablet and below - show mobile navigation */
 @media (max-width: 768px) {
   .nav-desktop {
     display: none;
   }
 
+  /* Hide hamburger - we use bottom nav instead */
   .hamburger {
+    display: none;
+  }
+
+  /* Show mobile bottom navigation */
+  .mobile-bottom-nav {
     display: flex;
+  }
+
+  /* Show mobile profile button */
+  .mobile-profile-btn {
+    display: flex;
+  }
+
+  /* Add padding for bottom nav */
+  main.container {
+    padding-bottom: 100px;
+  }
+
+  /* Ensure footer clears bottom nav */
+  .footer {
+    margin-bottom: 70px;
+  }
+
+  /* Adjust floating save bar position */
+  .floating-save-bar {
+    bottom: 60px;
   }
 
   .app-title {
@@ -3161,21 +3365,22 @@ small {
   font-size: 0.85rem;
 }
 
-/* Sync Status */
+/* Sync Status - Small chip style */
 .sync-status {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--color-surface);
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-full);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 .sync-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .sync-dot.synced {
@@ -3195,12 +3400,223 @@ small {
   background: var(--color-danger);
 }
 
+.sync-text {
+  color: var(--color-text-secondary);
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Make sync text visible - dark text for white pill background */
+.card-primary .sync-text {
+  color: #1f2937 !important;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
 
-/* Friend Code Display */
+/* Force social tab to match dashboard width constraint */
+#tab-social {
+  max-width: 1100px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Social Content Container */
+#social-content {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure cards in social content match dashboard cards */
+#tab-social .card,
+#tab-social .auth-banner {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Social User Header (Card Header) */
+.social-user-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.social-user-header .social-user-avatar {
+  width: 48px;
+  height: 48px;
+}
+
+.social-user-header .social-user-avatar .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.social-user-header .social-user-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.social-user-header .sync-status {
+  font-size: 0.75rem;
+}
+
+/* Social Tabs */
+.tab-navigation {
+  display: flex;
+  gap: var(--spacing-xs);
+  border-bottom: 2px solid rgba(59, 130, 246, 0.1);
+  padding-bottom: 0;
+}
+
+.social-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+}
+
+.social-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.social-tab-btn.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.social-tab-btn .icon {
+  opacity: 0.7;
+}
+
+.social-tab-btn.active .icon {
+  opacity: 1;
+}
+
+.social-tab-content {
+  display: none;
+}
+
+.social-tab-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+.card-header .btn-primary {
+  margin-left: auto;
+}
+
+/* Friend Code Compact Layout */
+.friend-code-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.friend-code-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: var(--spacing-xs);
+}
+
+.friend-code-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  font-family: 'Courier New', monospace;
+  color: #1e3a8a; /* Dark blue for better contrast */
+}
+
+.friend-code-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.btn-icon {
+  padding: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: white;
+}
+
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.btn-icon .icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Labeled icon buttons */
+.btn-icon-labeled {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.2s;
+  color: white;
+  min-width: 48px;
+}
+
+.btn-icon-labeled:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.btn-icon-labeled .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-icon-labeled span {
+  font-size: 0.6rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  opacity: 0.9;
+}
+
+/* Old Friend Code Display (for modals) */
 .friend-code-display {
   display: flex;
   align-items: center;
@@ -3213,10 +3629,15 @@ small {
   font-weight: 700;
   letter-spacing: 0.3em;
   font-family: 'Courier New', monospace;
-  color: white;
-  background: rgba(255, 255, 255, 0.15);
+  color: var(--color-text);
+  background: var(--color-surface);
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-md);
+}
+
+.card-primary .friend-code {
+  color: white;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .share-options {
@@ -3497,6 +3918,38 @@ small {
 }
 
 /* Benchmarks */
+.benchmark-prompt {
+  padding: var(--spacing-xl);
+}
+
+.benchmark-prompt .empty-state {
+  text-align: center;
+}
+
+.benchmark-prompt .empty-state svg {
+  color: var(--color-text-muted);
+}
+
+.benchmark-filter-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.benchmark-filter-info .filter-label {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.benchmark-filter-info .filter-value {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
 .benchmark-filters {
   display: flex;
   gap: var(--spacing-md);
@@ -3738,9 +4191,54 @@ small {
   }
 
   .sync-status {
+    /* Keep chip small on mobile */
+    margin-top: var(--spacing-xs);
+  }
+
+  /* Compact friend code layout for mobile */
+  .friend-code-compact {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .friend-code-value {
+    font-size: 1.25rem;
+    letter-spacing: 0.2em;
+  }
+
+  .friend-code-actions {
+    justify-content: center;
+  }
+
+  .social-user-header {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .social-user-name {
+    word-break: break-word;
+  }
+
+  /* Social card header - stack on mobile */
+  .card-primary .card-header {
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+  }
+
+  .card-primary .card-header > div:last-child {
     width: 100%;
     justify-content: center;
-    margin-top: var(--spacing-sm);
+  }
+
+  .card-header .btn-primary {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .benchmark-filter-info {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-xs);
   }
 }
 
@@ -4179,7 +4677,7 @@ small {
   background: #b91c1c;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .profile-summary {
     flex-direction: column;
     text-align: center;
@@ -4191,9 +4689,82 @@ small {
 
   .account-actions {
     flex-direction: column;
+    gap: var(--spacing-sm);
   }
 
   .account-actions .btn {
     width: 100%;
+    justify-content: center;
+  }
+
+  /* Ensure buttons stack vertically on mobile */
+  #sign-out-profile-btn,
+  #delete-account-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* ============================================
+   FLOATING SAVE BAR
+   ============================================ */
+
+.floating-save-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  padding: var(--spacing-md) var(--spacing-lg);
+  z-index: 210;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.floating-save-bar.visible {
+  transform: translateY(0);
+}
+
+.save-bar-content {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.save-bar-message {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.save-bar-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 480px) {
+  .floating-save-bar {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .save-bar-content {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .save-bar-message {
+    font-size: 0.85rem;
+  }
+
+  .save-bar-actions {
+    width: 100%;
+  }
+
+  .save-bar-actions .btn {
+    flex: 1;
   }
 }

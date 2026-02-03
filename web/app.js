@@ -32,7 +32,14 @@ let state = {
  * Called when page loads
  */
 async function init() {
-  console.log('🏊 Initializing Let\'s Keep Swimming...');
+  console.log('🏊 Initializing Let\'s Keep Swimming... [v2.7 - Delete Account Fix]');
+
+  // Safety check: Only initialize if main app is visible
+  const mainApp = document.getElementById('main-app');
+  if (!mainApp || mainApp.style.display === 'none') {
+    console.log('⚠️  Skipping init - app not ready or user not authenticated');
+    return;
+  }
 
   try {
     // Initialize storage
@@ -76,41 +83,28 @@ async function init() {
     // Load profile picture
     loadProfilePicture();
 
-    // Load initial view
-    loadDashboard();
-
     // Show storage info
     const storageInfo = DB.getStorageInfo();
     document.getElementById('storage-method').textContent = storageInfo.description;
+
+    console.log('💡 About to switch to dashboard tab...');
+    console.log('💡 All .tab-content elements:', document.querySelectorAll('.tab-content').length);
+
+    // Load initial view - explicitly switch to dashboard tab
+    switchTab('dashboard');
 
     console.log('🚀 App ready!');
   } catch (error) {
     console.error('❌ Initialization error:', error);
     console.error('Stack:', error.stack);
 
-    // Offer to reset if there's a database issue
-    const shouldReset = confirm(
-      'Error initializing app: ' + error.message +
-      '\n\nThis may be due to a database upgrade issue.' +
-      '\n\nWould you like to reset the database? (Your data will be lost unless you have a backup)'
+    // Show a user-friendly error message instead of the database reset dialog
+    alert(
+      'Unable to load the app. Please try:\n\n' +
+      '1. Refresh the page (Cmd+Shift+R or Ctrl+Shift+R)\n' +
+      '2. Clear your browser cache\n' +
+      '3. If the problem persists, contact support'
     );
-
-    if (shouldReset) {
-      try {
-        // Delete the IndexedDB entirely
-        indexedDB.deleteDatabase('LetsKeepSwimming');
-        // Clear localStorage too
-        localStorage.removeItem('lks_profile');
-        localStorage.removeItem('lks_sessions');
-        localStorage.removeItem('lks_metadata');
-        localStorage.removeItem('lks_coaching');
-        localStorage.removeItem('lks_events');
-        alert('Database reset. The page will now reload.');
-        location.reload();
-      } catch (resetError) {
-        alert('Could not reset database. Please clear your browser data for this site manually.');
-      }
-    }
   }
 }
 
@@ -118,18 +112,36 @@ async function init() {
  * Set up all event listeners
  */
 function setupEventListeners() {
-  // Tab switching (desktop nav and mobile nav)
-  document.querySelectorAll('.tab-btn, .mobile-nav-btn').forEach(btn => {
+  // Helper function to safely add event listener
+  const addListener = (id, event, handler) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.addEventListener(event, handler);
+    }
+  };
+
+  // Tab switching (desktop nav, mobile drawer, bottom nav, and settings bar)
+  document.querySelectorAll('.tab-btn, .mobile-nav-btn, .mobile-bottom-nav-btn, .mobile-settings-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab);
-      closeMobileNav(); // Close mobile nav when tab is selected
+      closeMobileNav(); // Close mobile nav drawer if open
     });
   });
 
-  // Mobile navigation
-  document.getElementById('hamburger-btn').addEventListener('click', toggleMobileNav);
-  document.getElementById('mobile-nav-close').addEventListener('click', closeMobileNav);
-  document.getElementById('mobile-nav-overlay').addEventListener('click', closeMobileNav);
+  // Mobile navigation drawer (legacy - keeping for compatibility)
+  addListener('hamburger-btn', 'click', toggleMobileNav);
+  addListener('mobile-nav-close', 'click', closeMobileNav);
+  addListener('mobile-nav-overlay', 'click', closeMobileNav);
+
+  // Mobile profile dropdown (header avatar menu)
+  addListener('mobile-profile-btn', 'click', toggleMobileProfileDropdown);
+  addListener('mobile-profile-overlay', 'click', closeMobileProfileDropdown);
+  document.querySelectorAll('.mobile-profile-dropdown-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchTab(btn.dataset.tab);
+      closeMobileProfileDropdown();
+    });
+  });
 
   // Scroll detection for header collapse
   setupScrollHandler();
@@ -138,17 +150,25 @@ function setupEventListeners() {
   const profileForm = document.getElementById('profile-form');
   if (profileForm) {
     profileForm.addEventListener('submit', handleProfileSubmit);
+    setupProfileChangeDetection(profileForm);
   }
   document.querySelectorAll('input[name="availability-type"]').forEach(radio => {
     radio.addEventListener('change', toggleAvailabilityType);
   });
 
+  // Profile save bar buttons
+  addListener('profile-discard-btn', 'click', discardProfileChanges);
+  addListener('profile-save-btn', 'click', () => {
+    const form = document.getElementById('profile-form');
+    if (form) form.requestSubmit();
+  });
+
   // Session form (modal)
-  document.getElementById('session-form').addEventListener('submit', handleSessionSubmit);
-  document.getElementById('session-cancel-btn').addEventListener('click', hideSessionForm);
-  document.getElementById('add-session-btn').addEventListener('click', showSessionForm);
-  document.getElementById('session-form-close-btn').addEventListener('click', hideSessionForm);
-  document.getElementById('session-modal').addEventListener('click', handleModalOverlayClick);
+  addListener('session-form', 'submit', handleSessionSubmit);
+  addListener('session-cancel-btn', 'click', hideSessionForm);
+  addListener('add-session-btn', 'click', showSessionForm);
+  addListener('session-form-close-btn', 'click', hideSessionForm);
+  addListener('session-modal', 'click', handleModalOverlayClick);
 
   // Effort selector buttons
   document.querySelectorAll('.effort-btn').forEach(btn => {
@@ -156,46 +176,58 @@ function setupEventListeners() {
   });
 
   // Import modal
-  document.getElementById('sessions-import-btn').addEventListener('click', showImportModal);
-  document.getElementById('import-modal-close-btn').addEventListener('click', hideImportModal);
-  document.getElementById('import-modal').addEventListener('click', handleModalOverlayClick);
-  document.getElementById('samsung-import-btn').addEventListener('click', () => document.getElementById('samsung-import-file').click());
-  document.getElementById('gpx-import-btn').addEventListener('click', () => document.getElementById('gpx-import-file').click());
-  document.getElementById('app-import-btn').addEventListener('click', () => document.getElementById('app-import-file').click());
-  document.getElementById('samsung-import-file').addEventListener('change', handleSamsungImport);
-  document.getElementById('gpx-import-file').addEventListener('change', handleGPXImport);
-  document.getElementById('app-import-file').addEventListener('change', handleAppImport);
-  document.getElementById('confirm-import-btn').addEventListener('click', confirmImport);
-  document.getElementById('cancel-import-btn').addEventListener('click', cancelImport);
+  addListener('sessions-import-btn', 'click', showImportModal);
+  addListener('import-modal-close-btn', 'click', hideImportModal);
+  addListener('import-modal', 'click', handleModalOverlayClick);
+  addListener('samsung-import-btn', 'click', () => {
+    const fileInput = document.getElementById('samsung-import-file');
+    if (fileInput) fileInput.click();
+  });
+  addListener('gpx-import-btn', 'click', () => {
+    const fileInput = document.getElementById('gpx-import-file');
+    if (fileInput) fileInput.click();
+  });
+  addListener('app-import-btn', 'click', () => {
+    const fileInput = document.getElementById('app-import-file');
+    if (fileInput) fileInput.click();
+  });
+  addListener('samsung-import-file', 'change', handleSamsungImport);
+  addListener('gpx-import-file', 'change', handleGPXImport);
+  addListener('app-import-file', 'change', handleAppImport);
+  addListener('confirm-import-btn', 'click', confirmImport);
+  addListener('cancel-import-btn', 'click', cancelImport);
 
   // Coaching
-  document.getElementById('get-coaching-btn').addEventListener('click', getCoaching);
-  document.getElementById('copy-coaching-btn').addEventListener('click', copyCoachingToClipboard);
+  addListener('get-coaching-btn', 'click', getCoaching);
+  addListener('copy-coaching-btn', 'click', copyCoachingToClipboard);
 
   // Coach adjustments
-  document.getElementById('toggle-pool').addEventListener('click', () => setCoachType('pool'));
-  document.getElementById('toggle-openwater').addEventListener('click', () => setCoachType('open_water'));
-  document.getElementById('adapt-session-btn').addEventListener('click', adaptSession);
-  document.getElementById('log-from-coach-btn').addEventListener('click', logSessionFromCoach);
+  addListener('toggle-pool', 'click', () => setCoachType('pool'));
+  addListener('toggle-openwater', 'click', () => setCoachType('open_water'));
+  addListener('adapt-session-btn', 'click', adaptSession);
+  addListener('log-from-coach-btn', 'click', logSessionFromCoach);
 
   // Data management
-  document.getElementById('export-btn').addEventListener('click', exportData);
-  document.getElementById('import-btn').addEventListener('click', importData);
-  document.getElementById('clear-all-btn').addEventListener('click', clearAllData);
+  addListener('export-btn', 'click', exportData);
+  addListener('import-btn', 'click', importData);
+  addListener('clear-all-btn', 'click', clearAllData);
 
   // Sessions page export button
-  document.getElementById('sessions-export-btn').addEventListener('click', exportData);
+  addListener('sessions-export-btn', 'click', exportData);
 
   // Profile picture
-  document.getElementById('upload-picture-btn').addEventListener('click', () => document.getElementById('profile-picture-input').click());
-  document.getElementById('profile-picture-input').addEventListener('change', handleProfilePictureUpload);
-  document.getElementById('remove-picture-btn').addEventListener('click', removeProfilePicture);
+  addListener('upload-picture-btn', 'click', () => {
+    const fileInput = document.getElementById('profile-picture-input');
+    if (fileInput) fileInput.click();
+  });
+  addListener('profile-picture-input', 'change', handleProfilePictureUpload);
+  addListener('remove-picture-btn', 'click', removeProfilePicture);
 
   // Session detail modal
-  document.getElementById('session-detail-close-btn').addEventListener('click', hideSessionDetailModal);
-  document.getElementById('session-detail-modal').addEventListener('click', handleModalOverlayClick);
-  document.getElementById('session-detail-edit-btn').addEventListener('click', editSessionFromDetail);
-  document.getElementById('session-detail-delete-btn').addEventListener('click', deleteSessionFromDetail);
+  addListener('session-detail-close-btn', 'click', hideSessionDetailModal);
+  addListener('session-detail-modal', 'click', handleModalOverlayClick);
+  addListener('session-detail-edit-btn', 'click', editSessionFromDetail);
+  addListener('session-detail-delete-btn', 'click', deleteSessionFromDetail);
 
   // Sub-tabs (Sessions/Events)
   document.querySelectorAll('.sub-tab-btn').forEach(btn => {
@@ -203,12 +235,18 @@ function setupEventListeners() {
   });
 
   // Event form (modal)
-  document.getElementById('event-form').addEventListener('submit', handleEventSubmit);
-  document.getElementById('event-cancel-btn').addEventListener('click', hideEventForm);
-  document.getElementById('add-event-btn').addEventListener('click', showEventForm);
-  document.getElementById('event-form-close-btn').addEventListener('click', hideEventForm);
-  document.getElementById('event-modal').addEventListener('click', handleModalOverlayClick);
-  document.getElementById('eventGoal').addEventListener('change', toggleEventTargetTime);
+  addListener('event-form', 'submit', handleEventSubmit);
+  addListener('event-cancel-btn', 'click', hideEventForm);
+  addListener('add-event-btn', 'click', showEventForm);
+  addListener('event-form-close-btn', 'click', hideEventForm);
+  addListener('event-modal', 'click', handleModalOverlayClick);
+  addListener('eventGoal', 'change', toggleEventTargetTime);
+
+  // Debug: Verify event form elements exist
+  console.log('🔍 Event form elements check:');
+  console.log('  - event-form:', document.getElementById('event-form') ? '✅' : '❌');
+  console.log('  - event-modal:', document.getElementById('event-modal') ? '✅' : '❌');
+  console.log('  - add-event-btn:', document.getElementById('add-event-btn') ? '✅' : '❌');
 }
 
 /**
@@ -260,28 +298,81 @@ function closeMobileNav() {
   const mobileNav = document.getElementById('mobile-nav');
   const overlay = document.getElementById('mobile-nav-overlay');
 
-  hamburger.classList.remove('active');
-  hamburger.setAttribute('aria-expanded', 'false');
-  mobileNav.classList.remove('active');
-  mobileNav.setAttribute('aria-hidden', 'true');
-  overlay.classList.remove('active');
+  if (hamburger) {
+    hamburger.classList.remove('active');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+  if (mobileNav) {
+    mobileNav.classList.remove('active');
+    mobileNav.setAttribute('aria-hidden', 'true');
+  }
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
   document.body.style.overflow = ''; // Restore scroll
+}
+
+/**
+ * Toggle mobile profile dropdown
+ */
+function toggleMobileProfileDropdown() {
+  const btn = document.getElementById('mobile-profile-btn');
+  const dropdown = document.getElementById('mobile-profile-dropdown');
+  const overlay = document.getElementById('mobile-profile-overlay');
+
+  if (!dropdown) return;
+
+  const isOpen = dropdown.classList.contains('active');
+
+  if (isOpen) {
+    closeMobileProfileDropdown();
+  } else {
+    if (btn) {
+      btn.classList.add('active');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+    dropdown.classList.add('active');
+    if (overlay) overlay.classList.add('active');
+  }
+}
+
+/**
+ * Close mobile profile dropdown
+ */
+function closeMobileProfileDropdown() {
+  const btn = document.getElementById('mobile-profile-btn');
+  const dropdown = document.getElementById('mobile-profile-dropdown');
+  const overlay = document.getElementById('mobile-profile-overlay');
+
+  if (btn) {
+    btn.classList.remove('active');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  if (dropdown) {
+    dropdown.classList.remove('active');
+  }
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
 }
 
 /**
  * Switch between tabs
  */
 function switchTab(tabName) {
+  console.log(`🔄 Switching to tab: ${tabName}`);
   state.currentView = tabName;
 
-  // Update tab buttons (both desktop and mobile)
-  document.querySelectorAll('.tab-btn, .mobile-nav-btn').forEach(btn => {
+  // Update all tab buttons (desktop, mobile drawer, bottom nav, and settings bar)
+  document.querySelectorAll('.tab-btn, .mobile-nav-btn, .mobile-bottom-nav-btn, .mobile-settings-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
 
   // Update tab content
   document.querySelectorAll('.tab-content').forEach(content => {
-    content.classList.toggle('active', content.id === `tab-${tabName}`);
+    const isActive = content.id === `tab-${tabName}`;
+    content.classList.toggle('active', isActive);
+    console.log(`  ${content.id}: ${isActive ? 'VISIBLE' : 'HIDDEN'}`);
   });
 
   // Load content for specific tabs
@@ -1217,14 +1308,47 @@ async function logSessionFromCoach() {
 /**
  * Load profile form
  */
-function loadProfile() {
-  if (!state.profile) return;
+async function loadProfile() {
+  // Try to get data from Firebase if available
+  let firstName = state.profile?.firstName || '';
+  let lastName = state.profile?.lastName || '';
+  let birthYear = state.profile?.birthYear || '';
+  let gender = state.profile?.gender || '';
+
+  // If local profile is empty and user is signed in, check Firebase
+  if (Auth.isFirebaseConfigured() && Auth.isSignedIn() && !state.profile?.firstName) {
+    try {
+      const userProfile = await Auth.getUserProfile();
+      if (userProfile) {
+        firstName = userProfile.firstName || firstName;
+        lastName = userProfile.lastName || lastName;
+
+        // Calculate birth year from age group if available
+        if (userProfile.ageGroup && !birthYear) {
+          const currentYear = new Date().getFullYear();
+          const ageGroupMap = {
+            'under_20': currentYear - 18,
+            '20s': currentYear - 25,
+            '30s': currentYear - 35,
+            '40s': currentYear - 45,
+            '50s': currentYear - 55,
+            '60_plus': currentYear - 65
+          };
+          birthYear = ageGroupMap[userProfile.ageGroup] || '';
+        }
+
+        gender = userProfile.gender || gender;
+      }
+    } catch (error) {
+      console.error('Error loading Firebase profile:', error);
+    }
+  }
 
   // Personal details
-  document.getElementById('firstName').value = state.profile.firstName || '';
-  document.getElementById('lastName').value = state.profile.lastName || '';
-  document.getElementById('birthYear').value = state.profile.birthYear || '';
-  document.getElementById('gender').value = state.profile.gender || '';
+  document.getElementById('firstName').value = firstName;
+  document.getElementById('lastName').value = lastName;
+  document.getElementById('birthYear').value = birthYear;
+  document.getElementById('gender').value = gender;
 
   // Training details
   document.getElementById('longestDistance').value = state.profile.longestRecentSwim?.distance_m || 1000;
@@ -1294,8 +1418,151 @@ async function handleProfileSubmit(e) {
   await DB.saveProfile(profile);
   state.profile = profile;
 
+  // Update Firebase user profile with age group and gender for social features
+  if (Auth.isFirebaseConfigured() && Auth.isSignedIn()) {
+    try {
+      const db = firebase.firestore();
+      const user = Auth.getCurrentUser();
+
+      // Calculate age group from birth year
+      let ageGroup = null;
+      if (profile.birthYear) {
+        const age = new Date().getFullYear() - profile.birthYear;
+        if (age < 20) ageGroup = 'under_20';
+        else if (age < 30) ageGroup = '20s';
+        else if (age < 40) ageGroup = '30s';
+        else if (age < 50) ageGroup = '40s';
+        else if (age < 60) ageGroup = '50s';
+        else ageGroup = '60_plus';
+      }
+
+      // Build display name from first/last name
+      const displayName = [profile.firstName, profile.lastName]
+        .filter(n => n)
+        .join(' ') || user.email.split('@')[0];
+
+      // Update Firestore user profile
+      await db.collection('users').doc(user.uid).update({
+        displayName: displayName,
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        ageGroup: ageGroup,
+        gender: profile.gender,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Also update Firebase Auth display name if changed
+      if (displayName !== user.displayName) {
+        await user.updateProfile({ displayName });
+      }
+
+      // Refresh benchmarks if Social module is loaded
+      if (typeof Social !== 'undefined' && Social.loadBenchmarks) {
+        await Social.loadBenchmarks();
+      }
+
+      console.log('User profile updated in Firebase');
+    } catch (error) {
+      console.error('Error updating Firebase profile:', error);
+      // Don't block the UI if Firebase update fails
+    }
+  }
+
+  // Hide the save bar and reset change tracking
+  hideProfileSaveBar();
+  state.profileFormInitialData = getProfileFormData();
+
   alert('✅ Profile saved!');
-  switchTab('dashboard');
+}
+
+/**
+ * Store initial form data for change detection
+ */
+let profileFormInitialData = null;
+
+/**
+ * Get current profile form data as a string for comparison
+ */
+function getProfileFormData() {
+  const form = document.getElementById('profile-form');
+  if (!form) return '';
+
+  const formData = new FormData(form);
+  const data = {};
+
+  // Get all form values
+  for (const [key, value] of formData.entries()) {
+    if (data[key]) {
+      // Handle multiple values (checkboxes)
+      if (Array.isArray(data[key])) {
+        data[key].push(value);
+      } else {
+        data[key] = [data[key], value];
+      }
+    } else {
+      data[key] = value;
+    }
+  }
+
+  return JSON.stringify(data);
+}
+
+/**
+ * Set up change detection for profile form
+ */
+function setupProfileChangeDetection(form) {
+  // Store initial data after form is populated
+  setTimeout(() => {
+    profileFormInitialData = getProfileFormData();
+  }, 500);
+
+  // Listen for changes on all inputs within the form
+  form.addEventListener('input', checkProfileFormChanges);
+  form.addEventListener('change', checkProfileFormChanges);
+}
+
+/**
+ * Check if profile form has changes
+ */
+function checkProfileFormChanges() {
+  const currentData = getProfileFormData();
+  const hasChanges = currentData !== profileFormInitialData;
+
+  const saveBar = document.getElementById('profile-save-bar');
+  if (saveBar) {
+    if (hasChanges) {
+      saveBar.style.display = 'block';
+      setTimeout(() => saveBar.classList.add('visible'), 10);
+    } else {
+      hideProfileSaveBar();
+    }
+  }
+}
+
+/**
+ * Hide the profile save bar
+ */
+function hideProfileSaveBar() {
+  const saveBar = document.getElementById('profile-save-bar');
+  if (saveBar) {
+    saveBar.classList.remove('visible');
+    setTimeout(() => {
+      saveBar.style.display = 'none';
+    }, 300);
+  }
+}
+
+/**
+ * Discard profile changes and reset form
+ */
+async function discardProfileChanges() {
+  // Reload the form with saved data
+  await loadProfile();
+  hideProfileSaveBar();
+  // Update the initial data reference
+  setTimeout(() => {
+    profileFormInitialData = getProfileFormData();
+  }, 100);
 }
 
 /**
@@ -1393,34 +1660,85 @@ function updateProfilePictureDisplay(dataUrl) {
   const profileImg = document.getElementById('profile-picture-img');
   const profilePlaceholder = document.getElementById('profile-picture-placeholder');
   const removeBtn = document.getElementById('remove-picture-btn');
+  const mobileSettingsAvatar = document.getElementById('mobile-settings-avatar');
+  const mobileProfileAvatar = document.getElementById('mobile-profile-avatar');
 
   if (dataUrl) {
     // Show images
-    navAvatar.src = dataUrl;
-    navAvatar.style.display = 'block';
-    navPlaceholder.style.display = 'none';
+    if (navAvatar) {
+      navAvatar.onerror = () => console.error('📷 Nav avatar failed to load');
+      navAvatar.src = dataUrl;
+      navAvatar.style.display = 'block';
+    }
+    if (navPlaceholder) navPlaceholder.style.display = 'none';
 
-    profileImg.src = dataUrl;
-    profileImg.style.display = 'block';
-    profilePlaceholder.style.display = 'none';
-    removeBtn.style.display = 'inline-flex';
+    if (profileImg) {
+      profileImg.onerror = () => console.error('📷 Profile img failed to load');
+      profileImg.src = dataUrl;
+      profileImg.style.display = 'block';
+    }
+    if (profilePlaceholder) profilePlaceholder.style.display = 'none';
+    if (removeBtn) removeBtn.style.display = 'inline-flex';
+
+    // Update mobile settings avatar (legacy)
+    if (mobileSettingsAvatar) {
+      mobileSettingsAvatar.innerHTML = `<img src="${dataUrl}" alt="Profile" referrerpolicy="no-referrer">`;
+    }
+
+    // Update mobile profile avatar (header button)
+    if (mobileProfileAvatar) {
+      mobileProfileAvatar.innerHTML = `<img src="${dataUrl}" alt="Profile" referrerpolicy="no-referrer">`;
+    }
   } else {
     // Show placeholders
-    navAvatar.style.display = 'none';
-    navPlaceholder.style.display = 'flex';
+    if (navAvatar) navAvatar.style.display = 'none';
+    if (navPlaceholder) navPlaceholder.style.display = 'flex';
 
-    profileImg.style.display = 'none';
-    profilePlaceholder.style.display = 'flex';
-    removeBtn.style.display = 'none';
+    if (profileImg) profileImg.style.display = 'none';
+    if (profilePlaceholder) profilePlaceholder.style.display = 'flex';
+    if (removeBtn) removeBtn.style.display = 'none';
+
+    // Reset mobile settings avatar to icon (legacy)
+    if (mobileSettingsAvatar) {
+      mobileSettingsAvatar.innerHTML = `<svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>`;
+    }
+
+    // Reset mobile profile avatar to icon (header button)
+    if (mobileProfileAvatar) {
+      mobileProfileAvatar.innerHTML = `<svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>`;
+    }
   }
 }
 
 /**
- * Load profile picture from localStorage
+ * Load profile picture from localStorage or Google profile
  */
 function loadProfilePicture() {
   const dataUrl = localStorage.getItem('profilePicture');
-  updateProfilePictureDisplay(dataUrl);
+
+  // If custom picture exists, use it
+  if (dataUrl) {
+    console.log('📷 Using custom profile picture from localStorage');
+    updateProfilePictureDisplay(dataUrl);
+    return;
+  }
+
+  // Otherwise, check for Google profile photo
+  if (Auth.isSignedIn()) {
+    const user = Auth.getCurrentUser();
+    console.log('📷 Auth user:', user?.email, 'photoURL:', user?.photoURL);
+    if (user && user.photoURL) {
+      console.log('📷 Using Google profile photo');
+      updateProfilePictureDisplay(user.photoURL);
+      return;
+    }
+  } else {
+    console.log('📷 User not signed in');
+  }
+
+  // No picture available
+  console.log('📷 No profile picture available');
+  updateProfilePictureDisplay(null);
 }
 
 /**
@@ -1484,45 +1802,52 @@ function loadSessions() {
 async function handleSessionSubmit(e) {
   e.preventDefault();
 
-  const formData = new FormData(e.target);
-  const editId = document.getElementById('edit-session-id').value;
+  try {
+    const formData = new FormData(e.target);
+    const editId = document.getElementById('edit-session-id').value;
 
-  // Build session object
-  const session = {
-    id: editId || crypto.randomUUID(),
-    date: formData.get('sessionDate'),
-    type: formData.get('sessionType'),
-    distance_m: parseInt(formData.get('sessionDistance')),
-    time_min: parseInt(formData.get('sessionTime')),
-    effort: formData.get('sessionRPE'), // easy, moderate, or hard
-    notes: formData.get('sessionNotes'),
-    conditions: formData.get('sessionConditions')
-  };
+    // Build session object
+    const session = {
+      id: editId || crypto.randomUUID(),
+      date: formData.get('sessionDate'),
+      type: formData.get('sessionType'),
+      distance_m: parseInt(formData.get('sessionDistance')),
+      time_min: parseFloat(formData.get('sessionTime')), // Use parseFloat to allow decimals
+      effort: formData.get('sessionRPE'), // easy, moderate, or hard
+      notes: formData.get('sessionNotes'),
+      conditions: formData.get('sessionConditions')
+    };
 
-  if (editId) {
-    // Update existing session
-    await DB.updateSession(editId, session);
-    const index = state.sessions.findIndex(s => s.id === editId);
-    state.sessions[index] = session;
-    alert('✅ Session updated!');
-    triggerCloudSync();
-  } else {
-    // Add new session
-    await DB.addSession(session);
-    state.sessions.push(session);
-    alert('✅ Session logged!');
-    triggerCloudSync();
-  }
+    console.log('Saving session:', session);
 
-  // Reset and hide form
-  hideSessionForm();
+    if (editId) {
+      // Update existing session
+      await DB.updateSession(editId, session);
+      const index = state.sessions.findIndex(s => s.id === editId);
+      state.sessions[index] = session;
+      alert('✅ Session updated!');
+      triggerCloudSync();
+    } else {
+      // Add new session
+      await DB.addSession(session);
+      state.sessions.push(session);
+      alert('✅ Session logged!');
+      triggerCloudSync();
+    }
 
-  // Reload sessions list
-  loadSessions();
+    // Reset and hide form
+    hideSessionForm();
 
-  // If we're on dashboard, reload it
-  if (state.currentView === 'dashboard') {
-    loadDashboard();
+    // Reload sessions list
+    loadSessions();
+
+    // If we're on dashboard, reload it
+    if (state.currentView === 'dashboard') {
+      loadDashboard();
+    }
+  } catch (error) {
+    console.error('Error saving session:', error);
+    alert('❌ Failed to save session: ' + error.message);
   }
 }
 
@@ -1720,7 +2045,18 @@ function renderEventItem(event, isPast) {
  */
 function showEventForm() {
   state.editingEventId = null;
-  document.getElementById('event-form').reset();
+
+  // Defensive check: Verify form exists before accessing it
+  const eventForm = document.getElementById('event-form');
+  if (!eventForm) {
+    console.error('❌ event-form element not found in DOM!');
+    console.log('DOM ready state:', document.readyState);
+    console.log('Main app display:', document.getElementById('main-app')?.style.display);
+    alert('Unable to open event form. Please refresh the page.');
+    return;
+  }
+
+  eventForm.reset();
   document.getElementById('edit-event-id').value = '';
   document.getElementById('event-form-title').textContent = 'Add New Event';
   document.getElementById('event-submit-btn').textContent = 'Add Event';
@@ -1740,8 +2076,14 @@ function showEventForm() {
  */
 function hideEventForm() {
   document.getElementById('event-modal').style.display = 'none';
-  document.getElementById('event-form').reset();
-  document.getElementById('edit-event-id').value = '';
+
+  // Defensive check: Verify form exists before accessing it
+  const eventForm = document.getElementById('event-form');
+  if (eventForm) {
+    eventForm.reset();
+    document.getElementById('edit-event-id').value = '';
+  }
+
   state.editingEventId = null;
   document.body.style.overflow = '';
 }
@@ -2876,17 +3218,14 @@ function deleteSessionFromDetail() {
   deleteSession(id);
 }
 
-// Initialize app when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+// Don't initialize app automatically - wait for authentication
+// The landing.js will call init() when user is authenticated
 
 // Make functions available globally for onclick handlers
 window.switchTab = switchTab;
 window.editSession = editSession;
 window.deleteSession = deleteSession;
+window.initApp = init; // Export init so landing.js can call it
 window.viewSessionDetail = viewSessionDetail;
 window.showEventForm = showEventForm;
 window.editEvent = editEvent;

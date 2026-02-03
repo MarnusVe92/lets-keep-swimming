@@ -1127,6 +1127,14 @@ app.delete('/api/friend/:friendshipId', verifyFirebaseToken, async (req, res) =>
   }
 });
 
+// Disable caching for development
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Expires', '0');
+  res.set('Pragma', 'no-cache');
+  next();
+});
+
 // Serve static files from web folder
 app.use(express.static(path.join(__dirname, '../web')));
 

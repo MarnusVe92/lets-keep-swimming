@@ -70,6 +70,36 @@ async function handleSocialAuthChange(authState) {
  * Load social data for user
  */
 async function loadSocialData(user) {
+  // If mock data is enabled, load it without Firebase
+  if (isMockDataEnabled()) {
+    const currentUser = user || Auth.getCurrentUser();
+    if (!currentUser) return;
+
+    // Update UI with current user info
+    const displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'You';
+    document.getElementById('social-user-name').textContent = displayName;
+    document.getElementById('my-friend-code').textContent = '8HVBU7';
+    socialState.myFriendCode = '8HVBU7';
+
+    // Update avatar if available
+    const avatarEl = document.getElementById('social-user-avatar');
+    if (avatarEl && currentUser.photoURL) {
+      avatarEl.innerHTML = `<img src="${currentUser.photoURL}" alt="Avatar" class="avatar-img">`;
+    }
+
+    // Load mock friends and leaderboard
+    socialState.friends = generateMockFriends();
+    updateFriendsListUI();
+    await loadLeaderboard();
+    await loadBenchmarks();
+
+    console.log('Mock data loaded:', {
+      friends: socialState.friends.length,
+      user: displayName
+    });
+    return;
+  }
+
   if (!Auth.isFirebaseConfigured()) return;
 
   try {
@@ -82,7 +112,6 @@ async function loadSocialData(user) {
 
       // Update UI with user info
       document.getElementById('social-user-name').textContent = userProfile.displayName || 'Anonymous';
-      document.getElementById('social-user-email').textContent = user.email;
       document.getElementById('my-friend-code').textContent = userProfile.friendCode || '------';
 
       // Show avatar if available
@@ -91,12 +120,25 @@ async function loadSocialData(user) {
         avatarEl.innerHTML = `<img src="${userProfile.photoURL || user.photoURL}" alt="Avatar" class="avatar-img">`;
       }
 
-      // Load privacy settings
-      if (userProfile.privacy) {
-        document.getElementById('privacy-share-volume').checked = userProfile.privacy.shareVolume !== false;
-        document.getElementById('privacy-share-streak').checked = userProfile.privacy.shareStreak !== false;
-        document.getElementById('privacy-share-pace').checked = userProfile.privacy.sharePace === true;
-        document.getElementById('privacy-contribute-anonymous').checked = userProfile.privacy.contributeAnonymous !== false;
+      // Check if age/gender is set and show/hide benchmark content
+      const hasAgeGender = userProfile.ageGroup || userProfile.gender;
+      const benchmarkPrompt = document.getElementById('benchmark-prompt');
+      const benchmarkContent = document.getElementById('benchmark-content');
+
+      if (hasAgeGender) {
+        if (benchmarkPrompt) benchmarkPrompt.style.display = 'none';
+        if (benchmarkContent) benchmarkContent.style.display = 'block';
+
+        // Update filter display
+        const filterDisplay = document.getElementById('benchmark-filter-display');
+        if (filterDisplay) {
+          const ageText = userProfile.ageGroup ? `${userProfile.ageGroup} years` : 'All ages';
+          const genderText = userProfile.gender ? userProfile.gender : 'all genders';
+          filterDisplay.textContent = `${ageText}, ${genderText}`;
+        }
+      } else {
+        if (benchmarkPrompt) benchmarkPrompt.style.display = 'block';
+        if (benchmarkContent) benchmarkContent.style.display = 'none';
       }
     }
 
@@ -120,6 +162,14 @@ async function loadSocialData(user) {
  * Load user's friends
  */
 async function loadFriends(uid) {
+  // Use mock data if enabled
+  if (isMockDataEnabled()) {
+    socialState.friends = generateMockFriends();
+    updateFriendsListUI();
+    loadLeaderboard(); // Also update leaderboard with mock data
+    return;
+  }
+
   if (!Auth.isFirebaseConfigured()) return;
 
   try {
@@ -250,34 +300,149 @@ async function loadLeaderboard() {
  * Load anonymous benchmarks
  */
 async function loadBenchmarks() {
-  // For now, show placeholder data
-  // In production, this would query aggregated benchmark data from Firestore
-  const benchmarkDistanceEl = document.getElementById('benchmark-distance-comparison');
-  const benchmarkStreakEl = document.getElementById('benchmark-streak-comparison');
+  // Use mock data if enabled
+  if (isMockDataEnabled()) {
+    const mockBenchmarks = generateMockBenchmarks();
 
-  if (benchmarkDistanceEl) {
-    benchmarkDistanceEl.innerHTML = `
-      <span class="benchmark-percentile">Coming soon</span>
-      <span class="benchmark-avg">Avg: -- m</span>
-    `;
+    const benchmarkDistanceEl = document.getElementById('benchmark-distance-comparison');
+    const benchmarkStreakEl = document.getElementById('benchmark-streak-comparison');
+    const myDistanceEl = document.getElementById('benchmark-my-distance');
+    const myStreakEl = document.getElementById('benchmark-my-streak');
+    const benchmarkPrompt = document.getElementById('benchmark-prompt');
+    const benchmarkContent = document.getElementById('benchmark-content');
+
+    // Show benchmark content
+    if (benchmarkPrompt) benchmarkPrompt.style.display = 'none';
+    if (benchmarkContent) benchmarkContent.style.display = 'block';
+
+    // Update display
+    if (myDistanceEl) myDistanceEl.textContent = `${mockBenchmarks.myDistance} m`;
+    if (myStreakEl) myStreakEl.textContent = `${mockBenchmarks.myStreak} days`;
+
+    const distancePercentile = calculatePercentile(mockBenchmarks.myDistance, mockBenchmarks.avgWeeklyDistance);
+    const streakPercentile = calculatePercentile(mockBenchmarks.myStreak, mockBenchmarks.avgCurrentStreak);
+
+    if (benchmarkDistanceEl) {
+      const distanceMessage = getPercentileMessage(distancePercentile);
+      benchmarkDistanceEl.innerHTML = `
+        <span class="benchmark-percentile">${distanceMessage}</span>
+        <span class="benchmark-avg">Group avg: ${mockBenchmarks.avgWeeklyDistance} m (${mockBenchmarks.totalUsers} swimmers)</span>
+      `;
+    }
+
+    if (benchmarkStreakEl) {
+      const streakMessage = getPercentileMessage(streakPercentile);
+      benchmarkStreakEl.innerHTML = `
+        <span class="benchmark-percentile">${streakMessage}</span>
+        <span class="benchmark-avg">Group avg: ${mockBenchmarks.avgCurrentStreak} days (${mockBenchmarks.totalUsers} swimmers)</span>
+      `;
+    }
+
+    return;
   }
 
-  if (benchmarkStreakEl) {
-    benchmarkStreakEl.innerHTML = `
-      <span class="benchmark-percentile">Coming soon</span>
-      <span class="benchmark-avg">Avg: -- days</span>
-    `;
-  }
+  if (!Auth.isFirebaseConfigured()) return;
 
-  // Update current user stats
   const userProfile = await Auth.getUserProfile();
-  if (userProfile?.stats) {
+  if (!userProfile || !userProfile.ageGroup || !userProfile.gender) {
+    console.log('Benchmarks require age and gender to be set');
+    return;
+  }
+
+  try {
+    const db = firebase.firestore();
+    const benchmarkKey = `${userProfile.ageGroup}_${userProfile.gender}`;
+
+    // Get benchmark data for user's demographic
+    const benchmarkDoc = await db.collection('benchmarks').doc(benchmarkKey).get();
+
+    const benchmarkDistanceEl = document.getElementById('benchmark-distance-comparison');
+    const benchmarkStreakEl = document.getElementById('benchmark-streak-comparison');
     const myDistanceEl = document.getElementById('benchmark-my-distance');
     const myStreakEl = document.getElementById('benchmark-my-streak');
 
-    if (myDistanceEl) myDistanceEl.textContent = `${userProfile.stats.weeklyDistance || 0} m`;
-    if (myStreakEl) myStreakEl.textContent = `${userProfile.stats.currentStreak || 0} days`;
+    // Update user's own stats
+    const myDistance = userProfile.stats?.weeklyDistance || 0;
+    const myStreak = userProfile.stats?.currentStreak || 0;
+
+    if (myDistanceEl) myDistanceEl.textContent = `${myDistance} m`;
+    if (myStreakEl) myStreakEl.textContent = `${myStreak} days`;
+
+    if (benchmarkDoc.exists) {
+      const benchmarkData = benchmarkDoc.data();
+      const avgDistance = benchmarkData.avgWeeklyDistance || 0;
+      const avgStreak = benchmarkData.avgCurrentStreak || 0;
+      const totalUsers = benchmarkData.totalUsers || 0;
+
+      // Calculate percentile (simplified - in production use actual percentile data)
+      const distancePercentile = calculatePercentile(myDistance, avgDistance);
+      const streakPercentile = calculatePercentile(myStreak, avgStreak);
+
+      // Update distance comparison
+      if (benchmarkDistanceEl) {
+        const distanceMessage = getPercentileMessage(distancePercentile);
+        benchmarkDistanceEl.innerHTML = `
+          <span class="benchmark-percentile">${distanceMessage}</span>
+          <span class="benchmark-avg">Group avg: ${avgDistance} m (${totalUsers} swimmers)</span>
+        `;
+      }
+
+      // Update streak comparison
+      if (benchmarkStreakEl) {
+        const streakMessage = getPercentileMessage(streakPercentile);
+        benchmarkStreakEl.innerHTML = `
+          <span class="benchmark-percentile">${streakMessage}</span>
+          <span class="benchmark-avg">Group avg: ${avgStreak} days (${totalUsers} swimmers)</span>
+        `;
+      }
+    } else {
+      // No benchmark data yet - show that user is the first
+      if (benchmarkDistanceEl) {
+        benchmarkDistanceEl.innerHTML = `
+          <span class="benchmark-percentile">Be the first!</span>
+          <span class="benchmark-avg">No data yet for your demographic</span>
+        `;
+      }
+
+      if (benchmarkStreakEl) {
+        benchmarkStreakEl.innerHTML = `
+          <span class="benchmark-percentile">Be the first!</span>
+          <span class="benchmark-avg">No data yet for your demographic</span>
+        `;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading benchmarks:', error);
   }
+}
+
+/**
+ * Calculate percentile (simplified)
+ * Returns a value between 0-100 indicating performance vs average
+ */
+function calculatePercentile(myValue, avgValue) {
+  if (avgValue === 0) return myValue > 0 ? 100 : 50;
+  const ratio = myValue / avgValue;
+
+  // Convert ratio to percentile (simplified sigmoid-like function)
+  if (ratio >= 2.0) return 95;
+  if (ratio >= 1.5) return 85;
+  if (ratio >= 1.2) return 75;
+  if (ratio >= 1.0) return 60;
+  if (ratio >= 0.8) return 45;
+  if (ratio >= 0.5) return 30;
+  return 15;
+}
+
+/**
+ * Get friendly message for percentile
+ */
+function getPercentileMessage(percentile) {
+  if (percentile >= 90) return '🏆 Top 10%!';
+  if (percentile >= 75) return '🌟 Above average';
+  if (percentile >= 50) return '✓ On track';
+  if (percentile >= 25) return '📈 Room to grow';
+  return '💪 Keep swimming';
 }
 
 /**
@@ -596,9 +761,23 @@ async function savePrivacySettings() {
  */
 function updateFriendsListUI() {
   const container = document.getElementById('friends-list');
-  if (!container) return;
+  const friendsTab = document.getElementById('social-tab-friends');
+
+  console.log('updateFriendsListUI called:', {
+    containerFound: !!container,
+    friendsCount: socialState.friends.length,
+    friendsTabFound: !!friendsTab,
+    friendsTabVisible: friendsTab ? friendsTab.style.display : 'N/A',
+    friendsData: socialState.friends.map(f => f.displayName)
+  });
+
+  if (!container) {
+    console.error('friends-list container not found!');
+    return;
+  }
 
   if (socialState.friends.length === 0) {
+    console.log('No friends to display, showing empty state');
     container.innerHTML = `
       <div class="empty-state">
         <p>No friends yet. Share your code to get started!</p>
@@ -607,6 +786,7 @@ function updateFriendsListUI() {
     return;
   }
 
+  console.log('Rendering', socialState.friends.length, 'friends');
   container.innerHTML = socialState.friends.map(friend => `
     <div class="friend-card">
       <div class="friend-avatar">
@@ -727,7 +907,6 @@ function setupSocialEventListeners() {
   // Auth buttons
   const signInGoogleBtn = document.getElementById('sign-in-google-btn');
   const signInEmailBtn = document.getElementById('sign-in-email-btn');
-  const signOutBtn = document.getElementById('sign-out-btn');
 
   if (signInGoogleBtn) {
     signInGoogleBtn.addEventListener('click', async () => {
@@ -746,18 +925,34 @@ function setupSocialEventListeners() {
     });
   }
 
-  if (signOutBtn) {
-    signOutBtn.addEventListener('click', async () => {
-      try {
-        await Auth.signOut();
-      } catch (error) {
-        console.error('Sign out failed:', error);
+  // Add Friend Modal
+  const openAddFriendModalBtn = document.getElementById('open-add-friend-modal-btn');
+  const addFriendModal = document.getElementById('add-friend-modal');
+  const addFriendModalCloseBtn = document.getElementById('add-friend-modal-close-btn');
+
+  if (openAddFriendModalBtn && addFriendModal) {
+    openAddFriendModalBtn.addEventListener('click', () => {
+      addFriendModal.style.display = 'flex';
+    });
+  }
+
+  if (addFriendModalCloseBtn && addFriendModal) {
+    addFriendModalCloseBtn.addEventListener('click', () => {
+      addFriendModal.style.display = 'none';
+    });
+  }
+
+  // Close modal when clicking outside
+  if (addFriendModal) {
+    addFriendModal.addEventListener('click', (e) => {
+      if (e.target === addFriendModal) {
+        addFriendModal.style.display = 'none';
       }
     });
   }
 
   // Email auth modal
-  const emailAuthForm = document.getElementById('email-auth-form');
+  const emailAuthForm = document.getElementById('modal-email-auth-form');
   const emailAuthCloseBtn = document.getElementById('email-auth-close-btn');
   const authSwitchBtn = document.getElementById('auth-switch-btn');
 
@@ -768,9 +963,9 @@ function setupSocialEventListeners() {
       e.preventDefault();
       Auth.clearAuthError();
 
-      const email = document.getElementById('auth-email').value;
-      const password = document.getElementById('auth-password').value;
-      const displayName = document.getElementById('auth-display-name').value;
+      const email = document.getElementById('modal-auth-email').value;
+      const password = document.getElementById('modal-auth-password').value;
+      const displayName = document.getElementById('modal-auth-display-name').value;
 
       try {
         if (isSignUp) {
@@ -795,10 +990,10 @@ function setupSocialEventListeners() {
   if (authSwitchBtn) {
     authSwitchBtn.addEventListener('click', () => {
       isSignUp = !isSignUp;
-      const title = document.getElementById('email-auth-title');
-      const submitBtn = document.getElementById('auth-submit-btn');
-      const switchText = document.getElementById('auth-switch-text');
-      const nameGroup = document.getElementById('auth-name-group');
+      const title = document.getElementById('modal-email-auth-title');
+      const submitBtn = document.getElementById('modal-auth-submit-btn');
+      const switchText = document.getElementById('modal-auth-switch-text');
+      const nameGroup = document.getElementById('modal-auth-name-group');
 
       if (isSignUp) {
         title.textContent = 'Create Account';
@@ -836,10 +1031,17 @@ function setupSocialEventListeners() {
   }
 
   if (addFriendBtn) {
-    addFriendBtn.addEventListener('click', () => {
+    addFriendBtn.addEventListener('click', async () => {
       const code = document.getElementById('friend-code-input').value;
       if (code.length >= 6) {
-        sendFriendRequest(code);
+        await sendFriendRequest(code);
+        // Close the modal on success
+        const addFriendModal = document.getElementById('add-friend-modal');
+        if (addFriendModal) {
+          addFriendModal.style.display = 'none';
+        }
+        // Clear input
+        document.getElementById('friend-code-input').value = '';
       } else {
         alert('Please enter a valid friend code');
       }
@@ -847,7 +1049,14 @@ function setupSocialEventListeners() {
   }
 
   if (scanQRBtn) {
-    scanQRBtn.addEventListener('click', startQRScanner);
+    scanQRBtn.addEventListener('click', () => {
+      // Close add friend modal if open
+      const addFriendModal = document.getElementById('add-friend-modal');
+      if (addFriendModal) {
+        addFriendModal.style.display = 'none';
+      }
+      startQRScanner();
+    });
   }
 
   // QR scanner close
@@ -855,21 +1064,6 @@ function setupSocialEventListeners() {
   if (qrScannerCloseBtn) {
     qrScannerCloseBtn.addEventListener('click', stopQRScanner);
   }
-
-  // Privacy toggles
-  const privacyToggles = [
-    'privacy-share-volume',
-    'privacy-share-streak',
-    'privacy-share-pace',
-    'privacy-contribute-anonymous'
-  ];
-
-  privacyToggles.forEach(id => {
-    const toggle = document.getElementById(id);
-    if (toggle) {
-      toggle.addEventListener('change', savePrivacySettings);
-    }
-  });
 
   // Check for friend code in URL (from shared link)
   const urlParams = new URLSearchParams(window.location.search);
@@ -910,6 +1104,183 @@ function setupSocialEventListeners() {
       }
     });
   }
+
+  // Social Tab Switching
+  document.querySelectorAll('.social-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabName = btn.getAttribute('data-social-tab');
+
+      console.log('Social tab clicked:', tabName);
+
+      // Update active tab button
+      document.querySelectorAll('.social-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Update visible tab content
+      document.querySelectorAll('.social-tab-content').forEach(content => {
+        content.classList.remove('active');
+        content.style.display = 'none';
+      });
+
+      const tabContent = document.getElementById(`social-tab-${tabName}`);
+      if (tabContent) {
+        tabContent.classList.add('active');
+        tabContent.style.display = 'block';
+        console.log('Showing tab content:', `social-tab-${tabName}`);
+      } else {
+        console.error('Tab content not found:', `social-tab-${tabName}`);
+      }
+    });
+  });
+
+  // Mock Data Toggle - only show in development (localhost)
+  const mockDataBtn = document.getElementById('toggle-mock-data-btn');
+  if (mockDataBtn) {
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isDevelopment) {
+      // Show the button in development
+      mockDataBtn.style.display = 'inline-flex';
+
+      // Load mock data state from localStorage
+      const mockDataEnabled = localStorage.getItem('mockDataEnabled') === 'true';
+      updateMockDataButton(mockDataEnabled);
+
+      mockDataBtn.addEventListener('click', () => {
+        const isEnabled = localStorage.getItem('mockDataEnabled') === 'true';
+        const newState = !isEnabled;
+        localStorage.setItem('mockDataEnabled', newState.toString());
+        updateMockDataButton(newState);
+
+        console.log('Mock data toggled:', newState ? 'ON' : 'OFF');
+
+        // Reload social data with mock data if enabled
+        const currentUser = Auth.getCurrentUser();
+        if (currentUser) {
+          loadSocialData(currentUser);
+        }
+      });
+    } else {
+      // In production, ensure mock data is disabled and button stays hidden
+      localStorage.removeItem('mockDataEnabled');
+    }
+  }
+}
+
+/**
+ * Update mock data button label
+ */
+function updateMockDataButton(enabled) {
+  const label = document.getElementById('mock-data-label');
+  if (label) {
+    label.textContent = enabled ? 'Hide Mock' : 'Show Mock';
+  }
+}
+
+/**
+ * Generate mock friends data for UI preview
+ */
+function generateMockFriends() {
+  const names = [
+    'Emma Wilson', 'Liam Martinez', 'Olivia Brown', 'Noah Johnson', 'Ava Davis',
+    'Ethan Garcia', 'Sophia Rodriguez', 'Mason Lee', 'Isabella Taylor', 'James Anderson'
+  ];
+
+  return names.map((name, index) => ({
+    uid: `mock-friend-${index}`,
+    displayName: name,
+    photoURL: null,
+    stats: {
+      weeklyDistance: Math.floor(Math.random() * 8000) + 2000,
+      currentStreak: Math.floor(Math.random() * 30) + 1,
+      avgPace: (Math.random() * 1 + 1.5).toFixed(2) // 1.5-2.5 min/100m
+    },
+    privacy: {
+      shareVolume: true,
+      shareStreak: Math.random() > 0.3,
+      sharePace: Math.random() > 0.5
+    }
+  }));
+}
+
+/**
+ * Generate mock benchmark data for UI preview
+ */
+function generateMockBenchmarks() {
+  return {
+    ageGroup: '30s',
+    gender: 'male',
+    totalUsers: 247,
+    avgWeeklyDistance: 4500,
+    avgCurrentStreak: 8,
+    myDistance: 5200,
+    myStreak: 12
+  };
+}
+
+/**
+ * Check if mock data is enabled
+ */
+function isMockDataEnabled() {
+  return localStorage.getItem('mockDataEnabled') === 'true';
+}
+
+/**
+ * Update benchmark aggregations
+ * Call this whenever a user's stats change and they have opted in
+ */
+async function updateBenchmarkAggregations(userProfile) {
+  if (!Auth.isFirebaseConfigured()) return;
+  if (!userProfile?.privacy?.contributeAnonymous) return;
+  if (!userProfile.ageGroup || !userProfile.gender) return;
+
+  try {
+    const db = firebase.firestore();
+    const benchmarkKey = `${userProfile.ageGroup}_${userProfile.gender}`;
+    const benchmarkRef = db.collection('benchmarks').doc(benchmarkKey);
+
+    const weeklyDistance = userProfile.stats?.weeklyDistance || 0;
+    const currentStreak = userProfile.stats?.currentStreak || 0;
+
+    // Use a transaction to update aggregations safely
+    await db.runTransaction(async (transaction) => {
+      const benchmarkDoc = await transaction.get(benchmarkRef);
+
+      if (!benchmarkDoc.exists) {
+        // Create new benchmark document
+        transaction.set(benchmarkRef, {
+          ageGroup: userProfile.ageGroup,
+          gender: userProfile.gender,
+          totalUsers: 1,
+          totalWeeklyDistance: weeklyDistance,
+          totalCurrentStreak: currentStreak,
+          avgWeeklyDistance: weeklyDistance,
+          avgCurrentStreak: currentStreak,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } else {
+        // Update existing benchmark
+        const data = benchmarkDoc.data();
+        const totalUsers = data.totalUsers || 1;
+
+        // Recalculate averages (simplified - in production use incremental updates)
+        const newTotalWeeklyDistance = data.totalWeeklyDistance + weeklyDistance;
+        const newTotalCurrentStreak = data.totalCurrentStreak + currentStreak;
+
+        transaction.update(benchmarkRef, {
+          totalWeeklyDistance: newTotalWeeklyDistance,
+          totalCurrentStreak: newTotalCurrentStreak,
+          avgWeeklyDistance: Math.round(newTotalWeeklyDistance / (totalUsers + 1)),
+          avgCurrentStreak: Math.round(newTotalCurrentStreak / (totalUsers + 1)),
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+    });
+
+    console.log('Benchmark aggregations updated');
+  } catch (error) {
+    console.error('Error updating benchmark aggregations:', error);
+  }
 }
 
 // Export Social module
@@ -925,7 +1296,8 @@ window.Social = {
   shareFriendLink,
   savePrivacySettings,
   loadLeaderboard,
-  loadBenchmarks
+  loadBenchmarks,
+  updateBenchmarkAggregations
 };
 
 // Initialize when DOM is ready

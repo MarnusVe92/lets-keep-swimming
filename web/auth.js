@@ -474,6 +474,26 @@ async function resendVerificationEmail() {
 }
 
 /**
+ * Send password reset email
+ */
+async function sendPasswordResetEmail(email) {
+  if (!authState.isConfigured) {
+    throw new Error('Firebase not configured');
+  }
+
+  try {
+    await firebase.auth().sendPasswordResetEmail(email, {
+      url: window.location.origin,
+      handleCodeInApp: false
+    });
+    console.log('Password reset email sent to:', email);
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    throw error;
+  }
+}
+
+/**
  * Delete user account and all associated data
  */
 async function deleteAccount() {
@@ -481,11 +501,12 @@ async function deleteAccount() {
     throw new Error('No user signed in');
   }
 
-  try {
-    const uid = authState.user.uid;
+  const uid = authState.user.uid;
+  let firestoreError = null;
 
-    // Delete Firestore data
-    if (authState.isConfigured) {
+  // Try to delete Firestore data, but don't fail if it doesn't work
+  if (authState.isConfigured) {
+    try {
       const db = firebase.firestore();
 
       // Get user profile to find friend code
@@ -502,16 +523,22 @@ async function deleteAccount() {
       // Delete user profile
       await db.collection('users').doc(uid).delete();
 
+      console.log('Firestore data deleted successfully');
       // TODO: Delete friendships, sessions, and other user data
       // This would require batch deletes or cloud functions for complete cleanup
+    } catch (error) {
+      console.warn('Failed to delete Firestore data (this is okay if Firebase is not fully configured):', error);
+      firestoreError = error;
+      // Don't throw - we still want to delete the auth account
     }
+  }
 
-    // Delete Firebase Auth account
+  // Delete Firebase Auth account (always attempt this)
+  try {
     await authState.user.delete();
-
     console.log('Account deleted successfully');
   } catch (error) {
-    console.error('Error deleting account:', error);
+    console.error('Error deleting Firebase Auth account:', error);
     throw error;
   }
 }
@@ -533,6 +560,7 @@ window.Auth = {
   updateUserStats,
   maskEmail,
   resendVerificationEmail,
+  sendPasswordResetEmail,
   deleteAccount,
   clearAuthError
 };

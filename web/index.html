@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="app-version" content="2.6">
   <title>Let's Keep Swimming - Midmar Mile Training</title>
 
   <!-- Favicon -->
@@ -32,6 +33,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
+  <script>console.log('📦 Let\'s Keep Swimming - Version 2.6 HTML FIX - Fixed unclosed form tag');</script>
   <!-- Authentication Landing Page (shown before sign-in) -->
   <div id="auth-landing" class="auth-landing">
     <div class="auth-landing-content">
@@ -93,9 +95,12 @@
               <label for="signin-password">Password</label>
               <input type="password" id="signin-password" required placeholder="••••••••">
             </div>
+            <div style="text-align: right; margin-bottom: var(--spacing-md);">
+              <button type="button" id="forgot-password-btn" class="btn-link" style="font-size: 0.875rem;">Forgot password?</button>
+            </div>
             <button type="submit" class="btn btn-primary btn-large">Sign In</button>
             <button type="button" id="back-to-options-btn" class="btn btn-text">Back to options</button>
-          </div>
+          </form>
 
           <form id="email-signup-form" class="auth-form" style="display: none;">
             <div class="form-group">
@@ -113,7 +118,19 @@
             </div>
             <button type="submit" class="btn btn-primary btn-large">Create Account</button>
             <button type="button" id="back-to-options-btn-2" class="btn btn-text">Back to options</button>
-          </div>
+          </form>
+
+          <form id="forgot-password-form" class="auth-form" style="display: none;">
+            <p style="margin-bottom: var(--spacing-lg); color: var(--text-secondary);">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+            <div class="form-group">
+              <label for="forgot-email">Email</label>
+              <input type="email" id="forgot-email" required placeholder="your@email.com">
+            </div>
+            <button type="submit" class="btn btn-primary btn-large">Send Reset Link</button>
+            <button type="button" id="back-to-signin-btn" class="btn btn-text">Back to sign in</button>
+          </form>
         </div>
       </div>
 
@@ -167,7 +184,7 @@
               <span class="avatar-placeholder" id="avatar-placeholder">
                 <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </span>
-              <img src="" alt="Profile" class="avatar-image" id="avatar-image" style="display: none;">
+              <img src="" alt="Profile" class="avatar-image" id="avatar-image" style="display: none;" referrerpolicy="no-referrer">
             </span>
             Profile
           </button>
@@ -175,57 +192,50 @@
         </div>
       </nav>
 
-      <!-- Mobile Hamburger Button -->
-      <button class="hamburger" id="hamburger-btn" aria-label="Toggle menu" aria-expanded="false">
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
+      <!-- Mobile Profile Button (opens dropdown) -->
+      <button class="mobile-profile-btn" id="mobile-profile-btn" aria-label="Profile menu" aria-expanded="false">
+        <span class="mobile-profile-avatar" id="mobile-profile-avatar">
+          <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+        </span>
       </button>
     </div>
   </header>
 
-  <!-- Mobile Navigation Drawer -->
-  <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
-  <nav class="mobile-nav" id="mobile-nav" aria-hidden="true">
-    <div class="mobile-nav-header">
-      <span class="mobile-nav-title">Menu</span>
-      <button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">
-        <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 24px; height: 24px;">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
-    <div class="mobile-nav-section">
-      <span class="mobile-nav-label">Main</span>
-      <button class="mobile-nav-btn active" data-tab="dashboard">
-        <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Dashboard
-      </button>
-      <button class="mobile-nav-btn" data-tab="sessions">
-        <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M4 22c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/><path d="M4 17c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/></svg>
-        Sessions
-      </button>
-      <button class="mobile-nav-btn" data-tab="coach">
-        <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M12 3c-1.5 0-2.5 1-2.5 2.5S10.5 8 12 8s2.5-1 2.5-2.5S13.5 3 12 3z"/><path d="M19 8h-1a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1z"/><path d="M5 8H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1z"/><path d="M12 10v4"/><path d="M8 16h8v4H8z"/></svg>
-        Coach
-      </button>
-      <button class="mobile-nav-btn" data-tab="social">
-        <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Social
-      </button>
-    </div>
-    <div class="mobile-nav-section">
-      <span class="mobile-nav-label">Settings</span>
-      <button class="mobile-nav-btn" data-tab="profile">
+  <!-- Mobile Profile Dropdown (slides down from header) -->
+  <div class="mobile-profile-dropdown" id="mobile-profile-dropdown">
+    <div class="mobile-profile-dropdown-content">
+      <button class="mobile-profile-dropdown-btn" data-tab="profile">
         <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
-        Profile
+        <span>Profile Settings</span>
+        <svg class="icon icon-outline icon-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
-      <button class="mobile-nav-btn" data-tab="data">
+      <button class="mobile-profile-dropdown-btn" data-tab="data">
         <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Data
+        <span>Import / Export Data</span>
+        <svg class="icon icon-outline icon-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </div>
+  </div>
+  <div class="mobile-profile-overlay" id="mobile-profile-overlay"></div>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+    <button class="mobile-bottom-nav-btn active" data-tab="dashboard">
+      <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="mobile-bottom-nav-btn" data-tab="sessions">
+      <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M4 22c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/><path d="M4 17c2-2.5 4-4 6-4 1.5 0 2.5.5 4 1.5 1.5 1 2.5 1.5 4 1.5 2 0 4-1.5 6-4"/></svg>
+      <span>Training</span>
+    </button>
+    <button class="mobile-bottom-nav-btn" data-tab="coach">
+      <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Coach</span>
+    </button>
+    <button class="mobile-bottom-nav-btn" data-tab="social">
+      <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Social</span>
+    </button>
   </nav>
 
   <main class="container">
@@ -546,7 +556,7 @@
                   <div class="profile-picture-placeholder" id="profile-picture-placeholder">
                     <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                   </div>
-                  <img src="" alt="Profile Picture" class="profile-picture-img" id="profile-picture-img" style="display: none;">
+                  <img src="" alt="Profile Picture" class="profile-picture-img" id="profile-picture-img" style="display: none;" referrerpolicy="no-referrer">
                 </div>
                 <div class="profile-picture-actions">
                   <input type="file" id="profile-picture-input" accept="image/*" style="display: none;">
@@ -594,7 +604,6 @@
               </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Save Profile</button>
           </div>
         </div>
       </div>
@@ -702,7 +711,57 @@
         </div>
       </div>
 
-      </div> <!-- End profile-form -->
+      <!-- Privacy Settings -->
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Privacy Settings
+          </h3>
+        </div>
+        <div class="card-body">
+          <p class="text-muted" style="margin-bottom: var(--spacing-lg);">Control what information you share with friends and the community.</p>
+          <div class="privacy-toggles">
+            <label class="toggle-switch">
+              <input type="checkbox" id="privacy-share-volume" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">Share weekly distance with friends</span>
+            </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="privacy-share-streak" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">Share current streak with friends</span>
+            </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="privacy-share-pace">
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">Share pace data with friends</span>
+            </label>
+            <div class="privacy-divider"></div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="privacy-contribute-anonymous" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">Contribute anonymous data to benchmarks</span>
+            </label>
+          </div>
+          <p class="text-muted" style="margin-top: var(--spacing-md);">
+            <small>Your personal info is never shared. Friends only see stats you allow.</small>
+          </p>
+        </div>
+      </div>
+
+      <!-- Floating Save Bar -->
+      <div id="profile-save-bar" class="floating-save-bar" style="display: none;">
+        <div class="save-bar-content">
+          <span class="save-bar-message">You have unsaved changes</span>
+          <div class="save-bar-actions">
+            <button type="button" class="btn btn-secondary btn-small" id="profile-discard-btn">Discard</button>
+            <button type="submit" class="btn btn-primary btn-small" id="profile-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      </form> <!-- End profile-form -->
 
       <!-- Account Management -->
       <div class="card">
@@ -838,14 +897,14 @@
                   <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><path d="M8 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 4v16"/></svg>
                   Distance (meters)
                 </label>
-                <input type="number" id="sessionDistance" name="sessionDistance" min="0" step="50" required>
+                <input type="number" id="sessionDistance" name="sessionDistance" min="0" step="1" required>
               </div>
               <div class="form-group">
                 <label for="sessionTime">
                   <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   Time (minutes)
                 </label>
-                <input type="number" id="sessionTime" name="sessionTime" min="0" step="1" required>
+                <input type="number" id="sessionTime" name="sessionTime" min="0" step="0.1" required>
               </div>
             </div>
 
@@ -885,7 +944,7 @@
               <button type="submit" class="btn btn-primary btn-large" id="session-submit-btn">Log Session</button>
               <button type="button" class="btn btn-secondary btn-large" id="session-cancel-btn">Cancel</button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
@@ -955,7 +1014,7 @@
           </button>
         </div>
         <div class="modal-body">
-          <form id="event-form">
+          <form id="event-form" novalidate>
             <input type="hidden" id="edit-event-id" value="">
 
             <div class="form-group">
@@ -963,7 +1022,7 @@
                 <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                 Event Name
               </label>
-              <input type="text" id="eventName" name="eventName" placeholder="e.g., Midmar Mile, 5K Open Water" required>
+              <input type="text" id="eventName" name="eventName" placeholder="e.g., Midmar Mile, 5K Open Water">
               <small>What's the event called?</small>
             </div>
 
@@ -973,14 +1032,14 @@
                   <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   Event Date
                 </label>
-                <input type="date" id="eventDate" name="eventDate" required>
+                <input type="date" id="eventDate" name="eventDate">
               </div>
               <div class="form-group">
                 <label for="eventDistance">
                   <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><path d="M8 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 4v16"/></svg>
                   Distance (meters)
                 </label>
-                <input type="number" id="eventDistance" name="eventDistance" min="100" step="100" value="1609" required>
+                <input type="number" id="eventDistance" name="eventDistance" min="100" step="1" value="1609">
                 <small>1609m = 1 mile</small>
               </div>
             </div>
@@ -990,7 +1049,7 @@
                 <svg class="icon icon-outline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                 Your Goal
               </label>
-              <select id="eventGoal" name="eventGoal" required>
+              <select id="eventGoal" name="eventGoal">
                 <option value="finish_comfortably">Finish comfortably</option>
                 <option value="target_time">Target a specific time</option>
                 <option value="personal_best">Beat my personal best</option>
@@ -1016,7 +1075,7 @@
               <button type="submit" class="btn btn-primary btn-large" id="event-submit-btn">Add Event</button>
               <button type="button" class="btn btn-secondary btn-large" id="event-cancel-btn">Cancel</button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
@@ -1088,55 +1147,53 @@
 
       <!-- Signed In Content (hidden by default) -->
       <div id="social-content" style="display: none;">
-        <!-- User Profile Card -->
-        <div class="card">
+        <!-- User Profile & Friend Code Combined -->
+        <div class="card card-primary">
           <div class="card-header">
-            <h3>
-              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Your Profile
-            </h3>
-            <button id="sign-out-btn" class="btn btn-secondary btn-small">Sign Out</button>
-          </div>
-          <div class="card-body">
-            <div class="social-user-card">
+            <div class="social-user-header">
               <div class="social-user-avatar" id="social-user-avatar">
                 <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
               <div class="social-user-info">
                 <div class="social-user-name" id="social-user-name">--</div>
-                <div class="social-user-email" id="social-user-email">--</div>
-              </div>
-              <div class="sync-status" id="sync-status">
-                <span class="sync-dot synced"></span>
-                <span class="sync-text">Synced</span>
+                <div class="sync-status" id="sync-status">
+                  <span class="sync-dot synced"></span>
+                  <span class="sync-text">Synced</span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Your Friend Code -->
-        <div class="card card-primary">
-          <div class="card-header">
-            <h3>Your Friend Code</h3>
+            <div style="display: flex; gap: var(--spacing-sm); align-items: center;">
+              <!-- Mock data button - only visible in development -->
+              <button id="toggle-mock-data-btn" class="btn btn-secondary btn-small dev-only" title="Toggle mock data for UI preview" style="display: none;">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span id="mock-data-label">Show Mock</span>
+              </button>
+              <button id="open-add-friend-modal-btn" class="btn btn-primary">
+                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                Add Friend
+              </button>
+            </div>
           </div>
           <div class="card-body">
-            <div class="friend-code-display">
-              <div class="friend-code" id="my-friend-code">------</div>
-              <button id="copy-friend-code-btn" class="btn btn-secondary btn-small">
-                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                Copy
-              </button>
-            </div>
-            <p class="text-muted">Share this code with friends so they can add you</p>
-            <div class="share-options">
-              <button id="show-qr-btn" class="btn btn-secondary">
-                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
-                Show QR Code
-              </button>
-              <button id="share-link-btn" class="btn btn-secondary">
-                <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                Share Link
-              </button>
+            <div class="friend-code-compact">
+              <div>
+                <label class="friend-code-label">Your Friend Code</label>
+                <div class="friend-code-value" id="my-friend-code">------</div>
+              </div>
+              <div class="friend-code-actions">
+                <button id="copy-friend-code-btn" class="btn-icon-labeled" title="Copy Code">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copy</span>
+                </button>
+                <button id="show-qr-btn" class="btn-icon-labeled" title="Show QR Code">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
+                  <span>QR</span>
+                </button>
+                <button id="share-link-btn" class="btn-icon-labeled" title="Share Link">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  <span>Share</span>
+                </button>
+              </div>
             </div>
             <div id="qr-code-container" class="qr-code-container" style="display: none;">
               <canvas id="qr-code-canvas"></canvas>
@@ -1144,15 +1201,176 @@
           </div>
         </div>
 
-        <!-- Add a Friend -->
-        <div class="card">
-          <div class="card-header">
-            <h3>
-              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-              Add a Friend
-            </h3>
+        <!-- Social Tabs -->
+        <div class="tab-navigation" style="margin-bottom: var(--spacing-lg);">
+          <button class="social-tab-btn active" data-social-tab="compare">
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+            Compare
+          </button>
+          <button class="social-tab-btn" data-social-tab="leaderboard">
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Leaderboard
+          </button>
+          <button class="social-tab-btn" data-social-tab="friends">
+            <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Friends
+          </button>
+        </div>
+
+        <!-- Friends Tab Content -->
+        <div id="social-tab-friends" class="social-tab-content" style="display: none;">
+          <!-- Friend Requests -->
+          <div class="card" id="friend-requests-card" style="display: none;">
+            <div class="card-header">
+              <h3>
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                Friend Requests
+                <span class="badge" id="friend-requests-count">0</span>
+              </h3>
+            </div>
+            <div class="card-body">
+              <div id="friend-requests-list"></div>
+            </div>
           </div>
-          <div class="card-body">
+
+          <!-- Friends List -->
+          <div class="card">
+            <div class="card-header">
+              <h3>
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                My Friends
+              </h3>
+            </div>
+            <div class="card-body">
+              <div id="friends-list" class="friends-list">
+                <div class="empty-state">
+                  <p>No friends yet. Share your code to get started!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaderboard Tab Content -->
+        <div id="social-tab-leaderboard" class="social-tab-content" style="display: none;">
+          <div class="card">
+            <div class="card-header">
+              <h3>
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Weekly Leaderboard
+              </h3>
+            </div>
+            <div class="card-body">
+              <div id="leaderboard" class="leaderboard">
+                <div class="empty-state">
+                  <p>Add friends to see the leaderboard</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compare Tab Content -->
+        <div id="social-tab-compare" class="social-tab-content active" style="display: block;">
+          <div class="card">
+            <div class="card-header">
+              <h3>
+                <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                How You Compare
+              </h3>
+              <a href="#" id="edit-permissions-link" class="btn-link" onclick="window.switchTab('profile'); return false;">Edit Permissions</a>
+            </div>
+            <div class="card-body">
+              <!-- Prompt to add details (shown when age/sex not set) -->
+              <div id="benchmark-prompt" class="benchmark-prompt" style="display: none;">
+                <div class="empty-state">
+                  <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 48px; height: 48px; margin-bottom: var(--spacing-md);"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                  <p>Add your age and gender to see how you compare with swimmers like you</p>
+                  <button onclick="window.switchTab('profile'); return false;" class="btn btn-primary">Complete Your Profile</button>
+                </div>
+              </div>
+
+              <!-- Benchmark results (shown when age/sex are set) -->
+              <div id="benchmark-content" style="display: none;">
+                <div class="benchmark-filters">
+                  <div class="benchmark-filter-info">
+                    <span class="filter-label">Comparing with:</span>
+                    <span class="filter-value" id="benchmark-filter-display">All swimmers</span>
+                  </div>
+                </div>
+                <div id="benchmark-results" class="benchmark-results">
+                  <div class="benchmark-stat">
+                    <div class="benchmark-label">Your Weekly Distance</div>
+                    <div class="benchmark-value" id="benchmark-my-distance">-- m</div>
+                    <div class="benchmark-comparison" id="benchmark-distance-comparison">
+                      <span class="benchmark-percentile">--</span>
+                      <span class="benchmark-avg">Avg: -- m</span>
+                    </div>
+                  </div>
+                  <div class="benchmark-stat">
+                    <div class="benchmark-label">Your Current Streak</div>
+                    <div class="benchmark-value" id="benchmark-my-streak">-- days</div>
+                    <div class="benchmark-comparison" id="benchmark-streak-comparison">
+                      <span class="benchmark-percentile">--</span>
+                      <span class="benchmark-avg">Avg: -- days</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="text-muted" style="margin-top: var(--spacing-md);">
+                  <small>Based on anonymous data from swimmers who opted in.</small>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Email Sign In Modal -->
+      <div class="modal-overlay" id="email-auth-modal" style="display: none;">
+        <div class="modal">
+          <div class="modal-header">
+            <h3 id="modal-email-auth-title">Sign In with Email</h3>
+            <button type="button" class="modal-close-btn" id="email-auth-close-btn">
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="modal-email-auth-form">
+              <div class="form-group">
+                <label for="modal-auth-email">Email</label>
+                <input type="email" id="modal-auth-email" placeholder="you@example.com">
+              </div>
+              <div class="form-group">
+                <label for="modal-auth-password">Password</label>
+                <input type="password" id="modal-auth-password" placeholder="Password" minlength="6">
+              </div>
+              <div class="form-group" id="modal-auth-name-group" style="display: none;">
+                <label for="modal-auth-display-name">Display Name</label>
+                <input type="text" id="modal-auth-display-name" placeholder="Your name">
+              </div>
+              <div id="modal-auth-error" class="auth-error" style="display: none;"></div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large" id="modal-auth-submit-btn">Sign In</button>
+              </div>
+              <div class="auth-switch">
+                <span id="modal-auth-switch-text">Don't have an account?</span>
+                <button type="button" class="btn-link" id="auth-switch-btn">Sign Up</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Friend Modal -->
+      <div class="modal-overlay" id="add-friend-modal" style="display: none;">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Add a Friend</h3>
+            <button type="button" class="modal-close-btn" id="add-friend-modal-close-btn">
+              <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="modal-body">
             <div class="add-friend-form">
               <div class="form-group">
                 <label for="friend-code-input">Enter Friend Code</label>
@@ -1168,182 +1386,6 @@
                 <svg class="icon icon-outline" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M23 19a2 2 0 0 1-2 2h-3"/><path d="M21 14v-1"/><path d="M3 5a2 2 0 0 1 2-2h3"/><path d="M3 10V9"/><path d="M21 9a2 2 0 0 0-2-2h-3"/><path d="M21 19v1"/><path d="M3 19a2 2 0 0 0 2 2h3"/><path d="M3 14v1"/></svg>
                 Scan QR Code
               </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Friend Requests -->
-        <div class="card" id="friend-requests-card" style="display: none;">
-          <div class="card-header">
-            <h3>
-              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
-              Friend Requests
-              <span class="badge" id="friend-requests-count">0</span>
-            </h3>
-          </div>
-          <div class="card-body">
-            <div id="friend-requests-list"></div>
-          </div>
-        </div>
-
-        <!-- Friends List -->
-        <div class="card">
-          <div class="card-header">
-            <h3>
-              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              My Friends
-            </h3>
-          </div>
-          <div class="card-body">
-            <div id="friends-list" class="friends-list">
-              <div class="empty-state">
-                <p>No friends yet. Share your code to get started!</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Leaderboard -->
-        <div class="card">
-          <div class="card-header">
-            <h3>
-              <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              Weekly Leaderboard
-            </h3>
-          </div>
-          <div class="card-body">
-            <div id="leaderboard" class="leaderboard">
-              <div class="empty-state">
-                <p>Add friends to see the leaderboard</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Benchmarks -->
-        <div class="card">
-          <div class="card-header">
-            <h3>
-              <svg class="icon icon-outline" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-              How You Compare
-            </h3>
-          </div>
-          <div class="card-body">
-            <div class="benchmark-filters">
-              <div class="form-group">
-                <label for="benchmark-age">Age Group</label>
-                <select id="benchmark-age">
-                  <option value="all">All Ages</option>
-                  <option value="18-29">18-29</option>
-                  <option value="30-39">30-39</option>
-                  <option value="40-49">40-49</option>
-                  <option value="50-59">50-59</option>
-                  <option value="60+">60+</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="benchmark-gender">Gender</label>
-                <select id="benchmark-gender">
-                  <option value="all">All</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-              </div>
-            </div>
-            <div id="benchmark-results" class="benchmark-results">
-              <div class="benchmark-stat">
-                <div class="benchmark-label">Your Weekly Distance</div>
-                <div class="benchmark-value" id="benchmark-my-distance">-- m</div>
-                <div class="benchmark-comparison" id="benchmark-distance-comparison">
-                  <span class="benchmark-percentile">--</span>
-                  <span class="benchmark-avg">Avg: -- m</span>
-                </div>
-              </div>
-              <div class="benchmark-stat">
-                <div class="benchmark-label">Your Current Streak</div>
-                <div class="benchmark-value" id="benchmark-my-streak">-- days</div>
-                <div class="benchmark-comparison" id="benchmark-streak-comparison">
-                  <span class="benchmark-percentile">--</span>
-                  <span class="benchmark-avg">Avg: -- days</span>
-                </div>
-              </div>
-            </div>
-            <p class="text-muted" style="margin-top: var(--spacing-md);">
-              <small>Based on anonymous data from swimmers who opted in. Your data is only included if you enable it in privacy settings.</small>
-            </p>
-          </div>
-        </div>
-
-        <!-- Privacy Settings -->
-        <div class="card">
-          <div class="card-header">
-            <h3>
-              <svg class="icon icon-outline" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              Privacy Settings
-            </h3>
-          </div>
-          <div class="card-body">
-            <div class="privacy-toggles">
-              <label class="toggle-switch">
-                <input type="checkbox" id="privacy-share-volume" checked>
-                <span class="toggle-slider"></span>
-                <span class="toggle-label">Share weekly distance with friends</span>
-              </label>
-              <label class="toggle-switch">
-                <input type="checkbox" id="privacy-share-streak" checked>
-                <span class="toggle-slider"></span>
-                <span class="toggle-label">Share current streak with friends</span>
-              </label>
-              <label class="toggle-switch">
-                <input type="checkbox" id="privacy-share-pace">
-                <span class="toggle-slider"></span>
-                <span class="toggle-label">Share pace data with friends</span>
-              </label>
-              <div class="privacy-divider"></div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="privacy-contribute-anonymous" checked>
-                <span class="toggle-slider"></span>
-                <span class="toggle-label">Contribute anonymous data to benchmarks</span>
-              </label>
-            </div>
-            <p class="text-muted" style="margin-top: var(--spacing-md);">
-              <small>Your personal info is never shared. Friends only see stats you allow.</small>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Email Sign In Modal -->
-      <div class="modal-overlay" id="email-auth-modal" style="display: none;">
-        <div class="modal">
-          <div class="modal-header">
-            <h3 id="email-auth-title">Sign In with Email</h3>
-            <button type="button" class="modal-close-btn" id="email-auth-close-btn">
-              <svg class="icon icon-outline" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form id="email-auth-form">
-              <div class="form-group">
-                <label for="auth-email">Email</label>
-                <input type="email" id="auth-email" required placeholder="you@example.com">
-              </div>
-              <div class="form-group">
-                <label for="auth-password">Password</label>
-                <input type="password" id="auth-password" required placeholder="Password" minlength="6">
-              </div>
-              <div class="form-group" id="auth-name-group" style="display: none;">
-                <label for="auth-display-name">Display Name</label>
-                <input type="text" id="auth-display-name" placeholder="Your name">
-              </div>
-              <div id="auth-error" class="auth-error" style="display: none;"></div>
-              <div class="form-actions">
-                <button type="submit" class="btn btn-primary btn-large" id="auth-submit-btn">Sign In</button>
-              </div>
-              <div class="auth-switch">
-                <span id="auth-switch-text">Don't have an account?</span>
-                <button type="button" class="btn-link" id="auth-switch-btn">Sign Up</button>
-              </div>
             </div>
           </div>
         </div>

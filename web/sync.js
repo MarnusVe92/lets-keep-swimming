@@ -295,6 +295,12 @@ async function updateCloudStats(sessions) {
       avgPace,
       updatedAt: new Date().toISOString()
     });
+
+    // Update benchmark aggregations if user has opted in
+    const userProfile = await Auth.getUserProfile();
+    if (userProfile && typeof Social !== 'undefined' && Social.updateBenchmarkAggregations) {
+      await Social.updateBenchmarkAggregations(userProfile);
+    }
   } catch (error) {
     console.error('Error updating cloud stats:', error);
   }
