@@ -40,9 +40,32 @@
 
   <!-- QR Code library for friend sharing -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+  <!-- Version config (must load early) -->
+  <script src="version.js"></script>
 </head>
 <body>
-  <script>console.log('📦 Let\'s Keep Swimming - Version 2.6 HTML FIX - Fixed unclosed form tag');</script>
+  <script>console.log('📦 Let\'s Keep Swimming - Version ' + (window.APP_VERSION?.version || '2.7'));</script>
+
+  <!-- Update Available Banner -->
+  <div id="update-banner" class="update-banner" style="display: none;">
+    <div class="update-banner-content">
+      <div class="update-banner-icon">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+      </div>
+      <div class="update-banner-text">
+        <strong>Update Available</strong>
+        <span id="update-changelog">New features and improvements</span>
+      </div>
+      <div class="update-banner-actions">
+        <button id="update-dismiss-btn" class="btn btn-secondary btn-small">Later</button>
+        <button id="update-refresh-btn" class="btn btn-primary btn-small">
+          <span id="update-btn-text">Refresh</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Authentication Landing Page (shown before sign-in) -->
   <div id="auth-landing" class="auth-landing">
     <div class="auth-landing-content">
@@ -1542,29 +1565,156 @@
   <script src="charts.js"></script>
   <script src="app.js"></script>
 
-  <!-- Service Worker Registration for PWA -->
+  <!-- Service Worker Registration & Update Detection -->
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('✅ Service Worker registered:', registration.scope);
+    (function() {
+      // Store for update state
+      let newWorkerWaiting = null;
+      let updateRequiresLogout = false;
 
-            // Check for updates
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('🔄 New version available! Refresh to update.');
-                }
-              });
-            });
-          })
-          .catch((error) => {
-            console.log('❌ Service Worker registration failed:', error);
+      // Show update banner
+      function showUpdateBanner(changelog, requiresLogout) {
+        const banner = document.getElementById('update-banner');
+        const changelogEl = document.getElementById('update-changelog');
+        const btnText = document.getElementById('update-btn-text');
+
+        if (!banner) return;
+
+        updateRequiresLogout = requiresLogout;
+
+        if (changelogEl && changelog) {
+          changelogEl.textContent = changelog;
+        }
+
+        if (btnText) {
+          btnText.textContent = requiresLogout ? 'Refresh & Sign In' : 'Refresh';
+        }
+
+        banner.style.display = 'block';
+        // Trigger animation
+        requestAnimationFrame(() => {
+          banner.classList.add('visible');
+        });
+      }
+
+      // Hide update banner
+      function hideUpdateBanner() {
+        const banner = document.getElementById('update-banner');
+        if (banner) {
+          banner.classList.remove('visible');
+          setTimeout(() => {
+            banner.style.display = 'none';
+          }, 400);
+        }
+      }
+
+      // Handle refresh
+      function handleRefresh() {
+        if (updateRequiresLogout && typeof Auth !== 'undefined' && Auth.signOut) {
+          // Sign out first, then reload
+          Auth.signOut().finally(() => {
+            if (newWorkerWaiting) {
+              newWorkerWaiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+            window.location.reload();
           });
+        } else {
+          // Just reload
+          if (newWorkerWaiting) {
+            newWorkerWaiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+          window.location.reload();
+        }
+      }
+
+      // Check for version updates via fetch
+      async function checkForUpdates() {
+        try {
+          // Fetch version.js with cache-busting
+          const response = await fetch('/version.js?t=' + Date.now());
+          const text = await response.text();
+
+          // Extract version info
+          const buildMatch = text.match(/build:\s*(\d+)/);
+          const logoutMatch = text.match(/requiresLogout:\s*(true|false)/);
+          const changelogMatch = text.match(/changelog:\s*['"]([^'"]+)['"]/);
+
+          const serverBuild = buildMatch ? parseInt(buildMatch[1]) : 0;
+          const requiresLogout = logoutMatch ? logoutMatch[1] === 'true' : false;
+          const changelog = changelogMatch ? changelogMatch[1] : 'New features and improvements';
+
+          // Compare with current version
+          const currentBuild = window.APP_VERSION?.build || 0;
+
+          if (serverBuild > currentBuild) {
+            console.log(`🔄 Update available: build ${currentBuild} → ${serverBuild}`);
+            showUpdateBanner(changelog, requiresLogout);
+          }
+        } catch (error) {
+          console.log('Version check failed:', error);
+        }
+      }
+
+      // Initialize
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('✅ Service Worker registered:', registration.scope);
+
+              // Check for updates on registration
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('🔄 New service worker installed');
+                    newWorkerWaiting = newWorker;
+
+                    // Check version to get changelog and logout requirement
+                    checkForUpdates();
+                  }
+                });
+              });
+
+              // Check for waiting service worker on page load
+              if (registration.waiting) {
+                newWorkerWaiting = registration.waiting;
+                checkForUpdates();
+              }
+
+              // Periodically check for updates (every 5 minutes)
+              setInterval(() => {
+                registration.update();
+              }, 5 * 60 * 1000);
+            })
+            .catch((error) => {
+              console.log('❌ Service Worker registration failed:', error);
+            });
+
+          // Listen for controller change (new SW activated)
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            // New service worker activated, reload if we triggered it
+            if (newWorkerWaiting) {
+              window.location.reload();
+            }
+          });
+        });
+      }
+
+      // Set up banner button handlers
+      document.addEventListener('DOMContentLoaded', () => {
+        const dismissBtn = document.getElementById('update-dismiss-btn');
+        const refreshBtn = document.getElementById('update-refresh-btn');
+
+        if (dismissBtn) {
+          dismissBtn.addEventListener('click', hideUpdateBanner);
+        }
+
+        if (refreshBtn) {
+          refreshBtn.addEventListener('click', handleRefresh);
+        }
       });
-    }
+    })();
   </script>
 </body>
 </html>

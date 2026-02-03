@@ -3,7 +3,9 @@
  * Enables offline functionality and caching for PWA
  */
 
-const CACHE_NAME = 'lets-keep-swimming-v1';
+// Version - update this when deploying new versions
+const SW_VERSION = '2.7.0';
+const CACHE_NAME = `lets-keep-swimming-v${SW_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache for offline use
@@ -18,6 +20,7 @@ const STATIC_ASSETS = [
   '/social.js',
   '/profile.js',
   '/landing.js',
+  '/version.js',
   '/favicon.png',
   '/manifest.json'
 ];
@@ -139,11 +142,16 @@ async function fetchAndCache(request) {
 
 // Handle messages from the app
 self.addEventListener('message', (event) => {
-  if (event.data === 'skipWaiting') {
+  const data = event.data;
+
+  // Handle skip waiting (both formats)
+  if (data === 'skipWaiting' || data?.type === 'SKIP_WAITING') {
+    console.log('[SW] Skip waiting requested');
     self.skipWaiting();
   }
 
-  if (event.data === 'clearCache') {
+  // Handle cache clear
+  if (data === 'clearCache' || data?.type === 'CLEAR_CACHE') {
     caches.delete(CACHE_NAME).then(() => {
       console.log('[SW] Cache cleared');
     });
